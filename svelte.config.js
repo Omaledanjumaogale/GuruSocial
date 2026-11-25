@@ -13,6 +13,10 @@ const config = {
 			precompress: false,
 			strict: true
 		}),
+		// CRITICAL for SPA fallback hosts: emit absolute asset URLs so deep routes
+		// like /dashboard/composer load /_app/... from the site root, not relative
+		// paths that 404 and render a blank white page.
+		paths: { relative: false },
 		csrf: { checkOrigin: false }
 	}
 };

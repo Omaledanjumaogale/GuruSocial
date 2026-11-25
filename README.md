@@ -54,19 +54,40 @@ npm run dev          # http://localhost:5173
 
 Without any configuration the app runs on the **built-in local demo provider** — the complete data model implemented in-browser with the same seeded demo dataset as production. Every screen works; nothing leaves your machine.
 
-## Attach the Convex backend (production)
+## Live deployment (already configured)
+
+This instance ships connected to a live Convex backend:
+
+| Setting | Value |
+|---|---|
+| Convex backend | `https://beaming-bobcat-890.eu-west-1.convex.cloud` |
+| HTTP API / MCP | `https://beaming-bobcat-890.eu-west-1.convex.site` |
+| Live site | <https://gurusocial.pages.dev> |
+
+Secrets (Resend, Agnes AI, OAuth, R2, admin credentials, E-WIN sync secret) are stored
+as encrypted Convex environment variables on the deployment — never in the repository.
+
+- **Demo → live**: new workspaces are seeded with demo data that is progressively replaced
+  by real data as you work; if the backend is unreachable the app transparently falls back
+  to the demo provider and returns to live data on recovery.
+- **Super admin console**: <https://gurusocial.pages.dev/console> — global ecosystem stats,
+  user list, audit trail and a one-click Resend test email.
+- **OAuth**: "Continue with Google / GitHub" on /auth. Register these redirect URIs in the
+  Google Cloud console and GitHub OAuth app settings:
+  `https://beaming-bobcat-890.eu-west-1.convex.site/oauth/google/callback` and
+  `https://beaming-bobcat-890.eu-west-1.convex.site/oauth/github/callback`
+- **LLM**: model-backed drafts run server-side on the Agnes AI hub
+  (`apihub.agnes-ai.com/v1`, model `agnes-3.0-flash`) — no key needed in the browser.
+- **Media**: direct-to-R2 presigned uploads (`convex/media.ts`, SigV4).
+- **E-WIN ecosystem**: signed reporting channel at `/integrations/ewin/{link,report,revoke}`
+  per the hub's protocol; see `ewin` docs and Settings → "E-WIN hub connection".
+
+### Backend development
 
 ```bash
-npm install -D convex         # already in devDependencies
 npx convex dev                # authenticate, generates convex/_generated
-npx convex deploy             # pushes functions, prints your deployment URL
-```
-
-Then set the URL and rebuild:
-
-```bash
-cp .env.example .env          # VITE_CONVEX_URL=https://<deployment>.convex.cloud
-npm run build
+npx convex deploy             # pushes functions
+npm run typecheck:convex      # tsc over convex/
 ```
 
 Schema, functions, HTTP API and MCP endpoint all live in [`convex/`](convex/) and are already typed and checked (`npm run typecheck:convex`).
@@ -106,6 +127,8 @@ Clients are written to `./scripts/<app>_api/`. Only reverse-engineer sites you o
 - **Convex** — schema, functions, HTTP actions (REST + MCP), scheduled publishing
 - **Tailwind CSS v4** — dark enterprise design system, fully responsive
 - **PWA** — manifest, service worker, installable on Windows/macOS/Android/iOS
+- **Resend** — transactional email (welcome + admin test email)
+- **E-WIN hub** — HMAC-signed reporting channel for the central ecosystem
 
 ## Repo layout
 

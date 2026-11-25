@@ -138,6 +138,11 @@
 	</section>
 
 	<footer class="border-t border-ink-700/60 py-8 text-center text-xs text-slate-600">
-		GuruSocial v1.0.0 — built with SvelteKit, Convex, Tailwind CSS and reverse-api-engineer. © 2026
+		<p>GuruSocial v1.1.0 — built with SvelteKit, Convex, Tailwind CSS and reverse-api-engineer. © 2026</p>
+		<p class="mt-2 flex justify-center gap-4">
+			<a href="/docs" class="hover:text-slate-400">API docs</a>
+			<a href="/console" class="hover:text-slate-400">Admin console</a>
+			<a href="https://beaming-bobcat-890.eu-west-1.convex.site/mcp" class="hover:text-slate-400">MCP endpoint</a>
+		</p>
 	</footer>
 </div>

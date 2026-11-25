@@ -139,12 +139,130 @@ const MCP_TOOLS = [
 	{ name: 'get_post_analytics', description: 'Per-platform analytics for one post.', inputSchema: { type: 'object', properties: { postId: { type: 'string' } }, required: ['postId'] } }
 ];
 
+/* ------------------------------ OAuth ------------------------------ */
+
+function appUrlFromState(state: string | null): string {
+	try {
+		const b64 = (state ?? '').replace(/-/g, '+').replace(/_/g, '/');
+		const decoded = JSON.parse(decodeURIComponent(escape(atob(b64))));
+		if (decoded?.a && /^https:\/\//.test(decoded.a)) return decoded.a.replace(/\/$/, '');
+	} catch { /* fall through */ }
+	return 'https://gurusocial.pages.dev';
+}
+
+const googleCallback = httpActionGeneric(async (ctx, request) => handleError(async () => {
+	const url = new URL(request.url);
+	const code = url.searchParams.get('code');
+	const state = url.searchParams.get('state');
+	const appUrl = appUrlFromState(state);
+	if (!code) return new Response(null, { status: 302, headers: { location: `${appUrl}/auth?oauth_error=missing_code` } });
+	try {
+		const profile = await ctx.runAction(api.oauthActions.exchangeGoogle, { code, redirectUri: `${url.origin}/oauth/google/callback` });
+		const { token, isNew } = await ctx.runMutation(api.oauthInternal.upsertOAuthUser, {
+			provider: 'google', providerAccountId: profile.providerAccountId, email: profile.email, name: profile.name
+		});
+		if (isNew) await ctx.runAction(api.email.sendWelcomeInternal, { to: profile.email, name: profile.name });
+		return new Response(null, { status: 302, headers: { location: `${appUrl}/auth?token=${token}&provider=google` } });
+	} catch (e: any) {
+		return new Response(null, { status: 302, headers: { location: `${appUrl}/auth?oauth_error=${encodeURIComponent(String(e.message).slice(0, 120))}` } });
+	}
+}));
+
+const githubCallback = httpActionGeneric(async (ctx, request) => handleError(async () => {
+	const url = new URL(request.url);
+	const code = url.searchParams.get('code');
+	const state = url.searchParams.get('state');
+	const appUrl = appUrlFromState(state);
+	if (!code) return new Response(null, { status: 302, headers: { location: `${appUrl}/auth?oauth_error=missing_code` } });
+	try {
+		const profile = await ctx.runAction(api.oauthActions.exchangeGithub, { code, redirectUri: `${url.origin}/oauth/github/callback` });
+		const { token, isNew } = await ctx.runMutation(api.oauthInternal.upsertOAuthUser, {
+			provider: 'github', providerAccountId: profile.providerAccountId, email: profile.email, name: profile.name
+		});
+		if (isNew) await ctx.runAction(api.email.sendWelcomeInternal, { to: profile.email, name: profile.name });
+		return new Response(null, { status: 302, headers: { location: `${appUrl}/auth?token=${token}&provider=github` } });
+	} catch (e: any) {
+		return new Response(null, { status: 302, headers: { location: `${appUrl}/auth?oauth_error=${encodeURIComponent(String(e.message).slice(0, 120))}` } });
+	}
+}));
+
+/* -------------------------- AI drafts endpoint -------------------------- */
+
+const aiDrafts = httpActionGeneric(async (ctx, request) => handleError(async () => {
+	const started = Date.now();
+	const body = await request.json();
+	const key = await resolveKey(ctx.runQuery, request.headers.get('authorization'));
+	const kits = await ctx.runQuery(api.crmInternal.kitsForUser, { userId: key.userId });
+	const drafts = await ctx.runAction(api.ai.generateInternal, {
+		topic: String(body.topic ?? ''),
+		sourceText: body.sourceText ?? undefined,
+		brandTone: (kits[0] as any)?.tone,
+		keyMessages: (kits[0] as any)?.keyMessages,
+		hashtags: (kits[0] as any)?.hashtags,
+		platforms: (body.platforms ?? []).map(String)
+	});
+	await recordLog(ctx.runMutation, key.userId, 'POST', '/api/v1/ai/drafts', 200, started, body.platforms, String(body.topic ?? '').slice(0, 100));
+	return json({ drafts });
+}));
+
+/* ------------------------- E-WIN signed service channel ------------------------- */
+
+async function ewinGuard(ctx: any, request: Request, path: string): Promise<{ ok: boolean; body?: any }> {
+	const raw = await request.text();
+	if (raw.length > 4096) return { ok: false };
+	const ts = request.headers.get('x-ewin-timestamp');
+	const sig = request.headers.get('x-ewin-signature');
+	if (!ts || !sig) return { ok: false };
+	const valid = await ctx.runAction(api.ewinActions.verifySignature, { path, timestamp: ts, rawBody: raw, signature: sig });
+	if (!valid) return { ok: false };
+	try { return { ok: true, body: JSON.parse(raw) }; } catch { return { ok: false }; }
+}
+
+const ewinNoStore = { 'content-type': 'application/json', 'cache-control': 'no-store', 'access-control-allow-origin': '*' };
+
+const ewinLink = httpActionGeneric(async (ctx, request) => handleError(async () => {
+	const guard = await ewinGuard(ctx, request, '/integrations/ewin/link');
+	if (!guard.ok) return json({ error: 'Unauthorized or malformed request.' }, 401);
+	try {
+		const result = await ctx.runAction(api.ewinActions.completeLink, {
+			code: String(guard.body?.code ?? ''), hubUserId: String(guard.body?.hubUserId ?? ''), hubEmail: String(guard.body?.hubEmail ?? '')
+		});
+		return new Response(JSON.stringify(result), { status: 200, headers: ewinNoStore });
+	} catch (e: any) {
+		return json({ error: e.message }, 422);
+	}
+}));
+
+const ewinReport = httpActionGeneric(async (ctx, request) => handleError(async () => {
+	const guard = await ewinGuard(ctx, request, '/integrations/ewin/report');
+	if (!guard.ok) return json({ error: 'Unauthorized or malformed request.' }, 401);
+	const result = await ctx.runAction(api.ewinActions.buildReport, {
+		sourceUserId: String(guard.body?.sourceUserId ?? ''), hubUserId: String(guard.body?.hubUserId ?? '')
+	});
+	return new Response(JSON.stringify(result), { status: 200, headers: ewinNoStore });
+}));
+
+const ewinRevoke = httpActionGeneric(async (ctx, request) => handleError(async () => {
+	const guard = await ewinGuard(ctx, request, '/integrations/ewin/revoke');
+	if (!guard.ok) return json({ error: 'Unauthorized or malformed request.' }, 401);
+	const result = await ctx.runAction(api.ewinActions.revoke, {
+		sourceUserId: String(guard.body?.sourceUserId ?? ''), hubUserId: String(guard.body?.hubUserId ?? '')
+	});
+	return new Response(JSON.stringify(result ?? { revoked: true }), { status: 200, headers: ewinNoStore });
+}));
+
 const httpApi = httpRouter();
 httpApi.route({ path: '/api/v1/posts', method: 'POST', handler: createPost });
 httpApi.route({ path: '/api/v1/posts', method: 'GET', handler: listPosts });
 httpApi.route({ path: '/api/v1/profiles', method: 'GET', handler: listProfilesApi });
 httpApi.route({ path: '/api/v1/analytics/top', method: 'GET', handler: analyticsTop });
 httpApi.route({ path: '/api/v1/inbox/reply', method: 'POST', handler: inboxReply });
+httpApi.route({ path: '/api/v1/ai/drafts', method: 'POST', handler: aiDrafts });
+httpApi.route({ path: '/oauth/google/callback', method: 'GET', handler: googleCallback });
+httpApi.route({ path: '/integrations/ewin/link', method: 'POST', handler: ewinLink });
+httpApi.route({ path: '/integrations/ewin/report', method: 'POST', handler: ewinReport });
+httpApi.route({ path: '/integrations/ewin/revoke', method: 'POST', handler: ewinRevoke });
+httpApi.route({ path: '/oauth/github/callback', method: 'GET', handler: githubCallback });
 httpApi.route({ pathPrefix: '/', method: 'OPTIONS', handler: corsPreflight });
 
 // Generic /mcp handler

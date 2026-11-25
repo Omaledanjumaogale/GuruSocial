@@ -10,6 +10,9 @@
 	let llmApiKey = $state('');
 	let llmProvider = $state('');
 	let saving = $state(false);
+	let ewinCode = $state<string | null>(null);
+	let ewinExpiry = $state<number | null>(null);
+	let issuingCode = $state(false);
 
 	onMount(() => {
 		const u = $session.user;
@@ -36,6 +39,20 @@
 			toast(e.message, 'error');
 		} finally {
 			saving = false;
+		}
+	}
+
+	async function issueEwinCode() {
+		issuingCode = true;
+		try {
+			const res = await data.ewin.issueCode($session.token!);
+			ewinCode = res.code;
+			ewinExpiry = res.expiresAt;
+			toast('Connection code generated — use it in E-WIN → Settings → Connections.');
+		} catch (e: any) {
+			toast(e.message, 'error');
+		} finally {
+			issuingCode = false;
 		}
 	}
 
@@ -77,10 +94,11 @@
 					<span class="label">Provider</span>
 					<select class="input" bind:value={llmProvider}>
 						<option value="">Built-in engine (no key needed)</option>
-						<option value="openai">OpenAI</option>
+						<option value="agnes">Agnes AI (server-side — key already configured)</option>
+						<option value="openai">OpenAI (your own key)</option>
 					</select>
 				</div>
-				<div><label class="label" for="llm">API key</label><input class="input" id="llm" type="password" bind:value={llmApiKey} placeholder="sk-…" disabled={!llmProvider} /></div>
+				<div><label class="label" for="llm">API key</label><input class="input" id="llm" type="password" bind:value={llmApiKey} placeholder={llmProvider === 'agnes' ? 'Held server-side on Convex — nothing to enter' : 'sk-…'} disabled={llmProvider !== 'openai'} /></div>
 			</div>
 			<button class="btn btn-ghost mt-3" onclick={saveProfile} disabled={saving}>Save provider</button>
 		</div>
@@ -94,6 +112,21 @@
 				<div><label class="label" for="np">New password</label><input class="input" id="np" type="password" bind:value={newPassword} placeholder="At least 8 characters" /></div>
 				<button class="btn btn-primary" onclick={savePassword}>Update password</button>
 			</div>
+		</div>
+
+		<div class="card mb-4 p-5">
+			<h3 class="mb-2 text-sm font-bold text-white">E-WIN hub connection</h3>
+			<p class="mb-3 text-xs leading-relaxed text-slate-400">Bind this workspace to the E-WIN central ecosystem. Generate a one-time code (valid 10 minutes) and paste it into E-WIN → Settings → Connections. E-WIN pulls a signed reporting snapshot — it never touches your wallet, credentials or message bodies.</p>
+			{#if ewinCode}
+				<div class="rounded-xl border border-mint-500/40 bg-mint-500/10 p-3">
+					<p class="break-all font-mono text-sm text-mint-300">{ewinCode}</p>
+					<p class="mt-1 text-[10px] text-slate-400">Shown once · expires {new Date(ewinExpiry!).toLocaleTimeString()}</p>
+				</div>
+			{/if}
+			<button class="btn btn-ghost mt-3" onclick={issueEwinCode} disabled={issuingCode || backendMode !== 'convex'}>
+				{issuingCode ? 'Generating…' : 'Generate connection code'}
+			</button>
+			{#if backendMode !== 'convex'}<p class="mt-2 text-[10px] text-amber-300">Requires the live backend.</p>{/if}
 		</div>
 
 		<div class="card p-5">

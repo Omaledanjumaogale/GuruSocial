@@ -589,6 +589,36 @@ export const localProvider: DataProvider = {
 			return db.auditLog.filter((a) => a.userId === s?.userId).sort((a, b) => b.createdAt - a.createdAt).slice(0, limit) as any;
 		}
 	},
+	ewin: {
+		async issueCode() {
+			throw new Error('The E-WIN hub connection requires the live Convex backend.');
+		}
+	},
+	ai: {
+		async generate(token, req) {
+			// Deterministic local engine — mirrors src/lib/ai/generator.ts heuristics.
+			const { generateDrafts } = await import('../ai/generator');
+			return generateDrafts({ topic: req.topic, sourceText: req.sourceText, platforms: req.platforms, hashtags: ['gurusocial'], variantSeed: Math.floor(Math.random() * 997) });
+		}
+	},
+	media: {
+		async presignUpload(token, fileName, contentType) {
+			// Demo mode: inline the file as a data URL so previews keep working offline.
+			return new Promise((resolve, reject) => {
+				const input = document.createElement('input');
+				input.type = 'file';
+				input.onchange = () => {
+					const file = input.files?.[0];
+					if (!file) return reject(new Error('No file selected.'));
+					const reader = new FileReader();
+					reader.onload = () => resolve({ uploadUrl: String(reader.result), publicUrl: String(reader.result), key: file.name });
+					reader.onerror = () => reject(new Error('Could not read file.'));
+					reader.readAsDataURL(file);
+				};
+				input.click();
+			});
+		}
+	},
 	harvest: {
 		async list(token) {
 			const db = load();

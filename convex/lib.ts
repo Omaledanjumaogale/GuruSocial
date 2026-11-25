@@ -1,5 +1,5 @@
 import { GenericQueryCtx, GenericMutationCtx, GenericActionCtx, DataModelFromSchemaDefinition } from 'convex/server';
-import type { DataModel } from './schema-data';
+import type { DataModel } from './schema_data';
 
 export type Ctx = GenericQueryCtx<DataModel>;
 export type MutCtx = GenericMutationCtx<DataModel>;
@@ -51,3 +51,10 @@ export const PLATFORMS = [
 	'bluesky', 'pinterest', 'telegram', 'whatsapp', 'google-business', 'zalo',
 	'slack', 'discord'
 ] as const;
+
+/** Reads a Convex environment variable inside a Node action. Throws if unset. */
+export function requireNodeEnv(name: string): string {
+	const value = process.env[name];
+	if (!value) throw new Error(`Missing environment variable ${name}. Set it with: npx convex env set ${name} <value>`);
+	return value;
+}

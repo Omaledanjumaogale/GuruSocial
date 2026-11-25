@@ -296,5 +296,42 @@ export default defineSchema({
 		target: s.string(),
 		detail: s.string(),
 		createdAt: s.number()
-	}).index('by_user', ['userId'])
+	}).index('by_user', ['userId']),
+
+	// Super-admin console sessions (EWIN ecosystem operator)
+	adminSessions: defineTable({
+		token: s.string(),
+		email: s.string(),
+		createdAt: s.number(),
+		expiresAt: s.number()
+	}).index('by_token', ['token']),
+
+	// OAuth identities linked to users (Google / GitHub)
+	oauthAccounts: defineTable({
+		provider: s.string(), // google | github
+		providerAccountId: s.string(),
+		email: s.string(),
+		userId: s.id('users'),
+		linkedAt: s.number()
+	}).index('by_provider_account', ['provider', 'providerAccountId']).index('by_email', ['email']),
+
+	// EWIN hub connection codes (issued from Settings, verified by E-WIN with HMAC)
+	ewinCodes: defineTable({
+		userId: s.id('users'),
+		codeHash: s.string(),
+		email: s.string(),
+		expiresAt: s.number(),
+		usedAt: s.optional(s.number())
+	}).index('by_hash', ['codeHash']),
+
+	// Established EWIN ↔ GuruSocial source links (one-to-one, re-bindable)
+	ewinLinks: defineTable({
+		sourceUserId: s.id('users'),
+		hubUserId: s.string(),
+		hubEmail: s.string(),
+		status: s.union(s.literal('active'), s.literal('revoked')),
+		lastReportAt: s.optional(s.number()),
+		linkedAt: s.number(),
+		revokedAt: s.optional(s.number())
+	}).index('by_source_hub', ['sourceUserId', 'hubUserId']).index('by_hub', ['hubUserId'])
 });

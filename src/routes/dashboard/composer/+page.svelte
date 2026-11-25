@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { data, session } from '$lib/data';
+	import { data, session, backendMode } from '$lib/data';
 	import { generateDrafts, generateWithLLM, extractFromUrl, PLATFORM_SPECS, bestTimes } from '$lib/ai/generator';
 	import PlatformBadge from '$lib/components/PlatformBadge.svelte';
 	import Modal from '$lib/components/Modal.svelte';
@@ -22,6 +22,8 @@
 	let urlInput = $state('');
 	let extracting = $state(false);
 	let firstComment = $state('');
+	let mediaUrls = $state<string[]>([]);
+	let uploadingMedia = $state(false);
 	let showConnect = $state(false);
 
 	onMount(async () => {
@@ -54,6 +56,38 @@
 		}
 	}
 
+	async function attachMedia() {
+		uploadingMedia = true;
+		try {
+			const input = document.createElement('input');
+			input.type = 'file';
+			input.accept = 'image/*,video/*';
+			input.onchange = async () => {
+				const file = input.files?.[0];
+				if (!file) { uploadingMedia = false; return; }
+				try {
+					const { uploadUrl, publicUrl } = await data.media.presignUpload($session.token!, file.name, file.type);
+					if (uploadUrl.startsWith('data:')) {
+						mediaUrls = [...mediaUrls, uploadUrl];
+					} else {
+						const put = await fetch(uploadUrl, { method: 'PUT', body: file, headers: { 'content-type': file.type } });
+						if (!put.ok) throw new Error(`R2 upload failed (${put.status}).`);
+						mediaUrls = [...mediaUrls, publicUrl];
+					}
+					toast('Media attached.');
+				} catch (e: any) {
+					toast(e.message, 'error');
+				} finally {
+					uploadingMedia = false;
+				}
+			};
+			input.click();
+		} catch (e: any) {
+			toast(e.message, 'error');
+			uploadingMedia = false;
+		}
+	}
+
 	async function generate() {
 		if (!topic.trim() && !sourceText.trim()) {
 			toast('Add a topic or a source to start.', 'error');
@@ -67,7 +101,19 @@
 		try {
 			const settings = $session.user?.settings as any;
 			let result: any[];
-			if (settings?.llmProvider && settings?.llmApiKey) {
+			if (backendMode === 'convex') {
+				// Live: model-backed generation server-side (Agnes AI hub, key held in Convex).
+				try {
+					result = await data.ai.generate($session.token!, { topic, sourceText, platforms: selected });
+				} catch (aiError: any) {
+					toast(aiError.message, 'info');
+					result = generateDrafts({
+						topic, sourceText, brandTone: brandKit?.tone, keyMessages: brandKit?.keyMessages,
+						hashtags: [...(brandKit?.hashtags ?? []), 'gurusocial'], platforms: selected,
+						variantSeed: Math.floor(Math.random() * 997)
+					});
+				}
+			} else if (settings?.llmProvider && settings?.llmApiKey) {
 				result = await generateWithLLM({
 					topic, sourceText, brandTone: brandKit?.tone, keyMessages: useBrandKit ? brandKit?.keyMessages : undefined,
 					hashtags: useBrandKit ? brandKit?.hashtags : undefined, platforms: selected,
@@ -112,6 +158,7 @@
 					content: edited[d.platform] ?? d.content,
 					platforms: [d.platform],
 					scheduledAt,
+					mediaUrls,
 					draft: false,
 					generatedBy: 'ai:composer'
 				});
@@ -205,6 +252,16 @@
 				<div>
 					<span class="label">First comment (optional)</span>
 					<input class="input" bind:value={firstComment} placeholder="Links and resources in the reply 👇" />
+				</div>
+			</div>
+
+			<div>
+				<span class="label">Media (R2-backed, direct browser upload)</span>
+				<div class="flex flex-wrap items-center gap-2">
+					<button class="btn btn-ghost" onclick={attachMedia} disabled={uploadingMedia}>{uploadingMedia ? 'Uploading…' : '⇪ Attach image / video'}</button>
+					{#each mediaUrls as u, i}
+						<span class="chip max-w-48 truncate bg-ink-700 text-slate-300">{i + 1}. {u.startsWith('data:') ? 'inline file' : u}</span>
+					{/each}
 				</div>
 			</div>
 

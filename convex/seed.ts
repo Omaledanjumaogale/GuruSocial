@@ -132,7 +132,7 @@ export const seedWorkspace = mutation({
 
 		await ctx.db.insert('campaigns', {
 			userId: user._id, name: 'Q1 product launch', goal: 'awareness', startDate: now - 7 * 864e5,
-			endDate: now + 21 * 864e5, platforms: ['instagram', 'linkedin', 'x', 'tiktok'], budget: 2500
+			endDate: now + 21 * 864e5, platforms: ['instagram', 'linkedin', 'x', 'tiktok'], budget: 2500, createdAt: now
 		});
 
 		await ctx.db.insert('queueSlots', { userId: user._id, platform: 'instagram', dayOfWeek: 2, timeOfDay: '09:30', active: true });

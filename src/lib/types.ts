@@ -270,6 +270,15 @@ export interface DataProvider {
 		logs(token: string, limit?: number): Promise<ApiLog[]>;
 		auditTrail(token: string, limit?: number): Promise<AuditEntry[]>;
 	};
+	ewin: {
+		issueCode(token: string): Promise<{ code: string; expiresAt: number }>;
+	};
+	ai: {
+		generate(token: string, req: { topic: string; sourceText?: string; platforms: string[] }): Promise<Array<{ platform: string; content: string; hashtags: string[]; warnings: string[]; charCount: number; charLimit: number }>>;
+	};
+	media: {
+		presignUpload(token: string, fileName: string, contentType: string): Promise<{ uploadUrl: string; publicUrl: string; key: string }>;
+	};
 	harvest: {
 		list(token: string): Promise<HarvestJob[]>;
 		create(token: string, j: { targetUrl: string; goal: string; mode: string }): Promise<{ jobId: string }>;

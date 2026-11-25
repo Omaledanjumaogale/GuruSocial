@@ -114,6 +114,15 @@ export function createConvexProvider(url: string): DataProvider {
 			logs: (token, limit) => wrap(() => client.query(api.keys.logs, { token, limit })),
 			auditTrail: (token, limit) => wrap(() => client.query(api.keys.auditTrail, { token, limit }))
 		},
+		ewin: {
+			issueCode: (token) => wrap(() => client.mutation(api.ewin.issueCode, { token }))
+		},
+		ai: {
+			generate: (token, req) => wrap(() => client.action(api.ai.generate, { token, topic: req.topic, sourceText: req.sourceText ?? undefined, platforms: req.platforms }))
+		},
+		media: {
+			presignUpload: (token, fileName, contentType) => wrap(() => client.action(api.media.presignUpload, { token, fileName, contentType }))
+		},
 		harvest: {
 			list: (token) => wrap(() => client.query(api.harvest.list, { token })),
 			create: (token, j) => wrap(() => client.mutation(api.harvest.create, { token, ...j } as any)),

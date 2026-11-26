@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { data, session } from '$lib/data';
 	import { toast } from '$lib/stores/toast';
-	import Shell from '$lib/components/Shell.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import { onMount } from 'svelte';
 
@@ -77,7 +76,6 @@
 	);
 </script>
 
-<Shell>
 	<header class="page-header">
 		<h1 class="page-title">Media library</h1>
 		<p class="page-sub">Every image and video uploaded to the workspace — stored on Cloudflare R2, ready to attach to any composer draft. Demo mode inlines files locally.</p>
@@ -123,4 +121,3 @@
 			{/each}
 		</div>
 	{/if}
-</Shell>

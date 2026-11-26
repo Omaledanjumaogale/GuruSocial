@@ -68,7 +68,7 @@
 					<div class="flex items-start justify-between">
 						<div>
 							<h3 class="text-base font-bold text-white">{c.name}</h3>
-							<p class="text-xs text-slate-500">{new Date(c.startDate).toLocaleDateString()} → {new Date(c.endDate).toLocaleDateString()}{c.budget ? ` · $${Number(c.budget).toLocaleString()} budget` : ''}</p>
+							<p class="text-xs text-slate-500">{new Date(c.startDate).toLocaleDateString()} → {new Date(c.endDate).toLocaleDateString()}{c.budget ? ` · ₦${Number(c.budget).toLocaleString()} budget` : ''}</p>
 						</div>
 						<span class="chip bg-guru-600/20 text-guru-400">{c.goal}</span>
 					</div>
@@ -99,7 +99,7 @@
 				<span class="label">Goal</span>
 				<select class="input" bind:value={goal}>{#each ['awareness', 'engagement', 'traffic', 'leads', 'sales'] as g}<option value={g}>{g}</option>{/each}</select>
 			</div>
-			<div><label class="label" for="cb">Budget ($, optional)</label><input class="input" id="cb" type="number" bind:value={budget} /></div>
+			<div><label class="label" for="cb">Budget (₦, optional)</label><input class="input" id="cb" type="number" bind:value={budget} /></div>
 		</div>
 		<div class="grid gap-4 sm:grid-cols-2">
 			<div><label class="label" for="cs">Start</label><input class="input" id="cs" type="date" bind:value={startDate} /></div>

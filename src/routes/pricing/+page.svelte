@@ -20,7 +20,7 @@
 		{
 			id: 'starter',
 			name: 'Starter',
-			price: '19',
+			price: '15,000',
 			cadence: 'per month',
 			summary: 'For a solo operator running a real publishing calendar.',
 			features: ['3 team members', 'Live API keys', 'Scheduled queue', '90-day analytics', 'CSV reports', 'Email notifications'],
@@ -29,7 +29,7 @@
 		{
 			id: 'pro',
 			name: 'Pro',
-			price: '49',
+			price: '39,000',
 			cadence: 'per month',
 			summary: 'For in-house teams with approvals and automations.',
 			features: ['10 team members', 'Approval workflow', 'Keyword automations', 'Competitor benchmarks', 'Webhooks', 'Priority support']
@@ -37,7 +37,7 @@
 		{
 			id: 'agency',
 			name: 'Agency',
-			price: '129',
+			price: '99,000',
 			cadence: 'per month',
 			summary: 'Multi-client operations with per-client access.',
 			features: ['Unlimited members', 'Per-client API keys', 'Brand kits', 'White-label reports', 'Audit trail', 'E-WIN hub sync']
@@ -87,7 +87,7 @@
 					</div>
 					<p class="mt-4 flex items-baseline gap-1.5">
 						<span class="font-display text-3xl font-semibold tracking-tight text-white">
-							{plan.price === 'Custom' ? 'Custom' : `$${plan.price}`}
+							{plan.price === 'Custom' ? 'Custom' : `₦${plan.price}`}
 						</span>
 						<span class="text-xs text-slate-500">{plan.cadence}</span>
 					</p>

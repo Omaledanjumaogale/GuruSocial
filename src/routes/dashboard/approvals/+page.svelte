@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { data, session } from '$lib/data';
 	import { toast } from '$lib/stores/toast';
-	import Shell from '$lib/components/Shell.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import PlatformBadge from '$lib/components/PlatformBadge.svelte';
 	import { onMount } from 'svelte';
@@ -37,7 +36,6 @@
 	}
 </script>
 
-<Shell>
 	<header>
 		<h1 class="page-title">Approval flows</h1>
 		<p class="page-sub">Review queue for scheduled posts. Approvers, admins and owners sign off before anything reaches the queue — every decision is written to the audit trail.</p>
@@ -71,4 +69,3 @@
 			{/each}
 		</div>
 	{/if}
-</Shell>

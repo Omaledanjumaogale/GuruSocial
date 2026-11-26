@@ -9,6 +9,25 @@
 	import NavigationBanner from '$lib/components/banners/NavigationBanner.svelte';
 	import { NAVIGATION_BANNERS } from '$lib/config/navigation-banners';
 
+	const TESTIMONIALS = [
+		{ name: 'Chiamaka Obi', role: 'Head of Marketing, Lekki retail group', initials: 'CO', quote: 'We replaced three subscriptions with GuruSocial. The approval flow alone saved our team hours every single week — and the client reports actually get read.' },
+		{ name: 'Tunde Afolabi', role: 'Agency owner, Abuja', initials: 'TA', quote: 'Publishing to 9 networks from one queue changed how we price retainers. The AI composer drafts in our voice; we just review and approve.' },
+		{ name: 'Sarah Mensah', role: 'Social lead, fintech scale-up', initials: 'SM', quote: 'The unified inbox and the CRM finally live in the same place as our content calendar. The developer API let us wire it straight into our product.' },
+		{ name: 'Emeka Nwosu', role: 'E-commerce growth lead', initials: 'EN', quote: 'Competitor benchmarks per platform are the killer feature. We found two content gaps in the first week and posts published the same day.' },
+		{ name: 'Fatima Bello', role: 'Communications manager, NGO', initials: 'FB', quote: 'Multi-team sign-off used to happen over email. Now approvals, audit trail and scheduling are one workflow. Total game changer.' },
+		{ name: 'Kelechi Amadi', role: 'Media agency director', initials: 'KA', quote: 'The E-WIN hub connection and per-client API keys mean one dashboard for every account we manage. White-label reports closed three new retainers.' }
+	];
+
+	const FAQS = [
+		{ q: 'Which platforms does GuruSocial support?', a: 'Fifteen networks: Facebook, Instagram, X (Twitter), LinkedIn, TikTok, YouTube, Threads, Bluesky, Pinterest, Telegram, WhatsApp, Google Business, Zalo, Slack and Discord — each with its own character intelligence and media rules.' },
+		{ q: 'Do I need a credit card to start?', a: 'No. The Free plan gives you a full workspace, the AI composer, the unified inbox and the developer sandbox — forever, no card required.' },
+		{ q: 'How does the E-WIN ecosystem integration work?', a: 'GuruSocial is part of the E-WIN central ecosystem. Link your hub account from Settings, and your workspace identity, reporting snapshots and sign-in sessions are synchronised with the hub over a signed service channel. You can revoke at any time.' },
+		{ q: 'Can my team review posts before they publish?', a: 'Yes. The approval workflow lets approvers, admins and owners sign off, request changes or reject drafts, and every decision is written to the audit trail.' },
+		{ q: 'Does the API and MCP server come with every plan?', a: 'The developer API and MCP endpoint are available on every plan. Live keys start on Starter; the Free plan includes sandbox keys with the full validation path.' },
+		{ q: 'What happens to my data if I cancel?', a: 'Your content, analytics and audience history remain exportable in CSV for 90 days after cancellation, and platform credentials stored with us are deleted on request.' },
+		{ q: 'Is there an installable app?', a: 'Yes — GuruSocial is a full PWA. Install it on Windows, macOS, iOS or Android from the browser, and it works offline with background sync.' }
+	];
+
 	const PLATFORMS = [
 		{ name: 'Facebook', color: '#1877f2', glyph: 'f' }, { name: 'Instagram', color: '#d6336c', glyph: '◎' },
 		{ name: 'X', color: '#111827', glyph: '𝕏' }, { name: 'LinkedIn', color: '#0a66c2', glyph: 'in' },
@@ -148,21 +167,60 @@
 		</div>
 	</section>
 
-	<!-- Install / deploy -->
+	<!-- Install / availability -->
 	<section class="mx-auto max-w-6xl px-4 pb-20">
-		<div class="grid gap-4 sm:grid-cols-3">
+		<div class="grid gap-4 sm:grid-cols-2">
 			<div class="card p-6">
 				<h3 class="text-base font-bold text-white">💻 Install on laptop</h3>
-				<p class="mt-2 text-sm text-slate-400">Runs on Windows and macOS. <code class="text-guru-400">npm install && npm run dev</code> — or deploy Convex and host anywhere.</p>
-			</div>
-			<div class="card p-6">
-				<h3 class="text-base font-bold text-white">☁️ Deploy to Cloudflare Pages</h3>
-				<p class="mt-2 text-sm text-slate-400">Static SvelteKit build + Convex backend. <code class="text-guru-400">npm run build</code>, point Pages at <code class="text-guru-400">build/</code>.</p>
+				<p class="mt-2 text-sm text-slate-400">Runs on Windows and macOS as an installable app. <code class="text-guru-400">npm install && npm run dev</code> to self-host.</p>
 			</div>
 			<div class="card p-6">
 				<h3 class="text-base font-bold text-white">📱 PWA on mobile</h3>
 				<p class="mt-2 text-sm text-slate-400">Installable, offline-capable, fully responsive. Add to home screen on iOS and Android.</p>
 			</div>
+		</div>
+	</section>
+
+	<!-- What clients say -->
+	<section class="mx-auto max-w-6xl px-4 pb-20">
+		<header class="mx-auto max-w-2xl text-center">
+			<p class="eyebrow">What clients say</p>
+			<h2 class="font-display text-display-sm font-semibold tracking-tight text-white">Teams that stopped tab-juggling.</h2>
+			<p class="mt-3 text-sm leading-relaxed text-slate-400">Operators, agencies and in-house teams running their whole social operation from one command center.</p>
+		</header>
+		<div class="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+			{#each TESTIMONIALS as t}
+				<figure class="card p-6">
+					<div class="flex gap-1 text-sm text-amber-guru" aria-label="5 out of 5 stars">{'★★★★★'}</div>
+					<blockquote class="mt-3 text-sm leading-relaxed text-slate-300">“{t.quote}”</blockquote>
+					<figcaption class="mt-4 flex items-center gap-3">
+						<span class="grid h-9 w-9 place-items-center rounded-full bg-guru-600/15 text-xs font-bold text-guru-300">{t.initials}</span>
+						<span>
+							<span class="block text-sm font-semibold text-white">{t.name}</span>
+							<span class="block text-xs text-slate-500">{t.role}</span>
+						</span>
+					</figcaption>
+				</figure>
+			{/each}
+		</div>
+	</section>
+
+	<!-- FAQ -->
+	<section class="mx-auto max-w-3xl px-4 pb-24">
+		<header class="text-center">
+			<p class="eyebrow">FAQ</p>
+			<h2 class="font-display text-display-sm font-semibold tracking-tight text-white">Questions, answered.</h2>
+		</header>
+		<div class="mt-8 space-y-3">
+			{#each FAQS as f}
+				<details class="card group p-5">
+					<summary class="flex cursor-pointer list-none items-center justify-between gap-4 text-sm font-semibold text-white">
+						{f.q}
+						<span class="text-lg text-guru-400 transition-transform group-open:rotate-45">＋</span>
+					</summary>
+					<p class="mt-3 text-sm leading-relaxed text-slate-400">{f.a}</p>
+				</details>
+			{/each}
 		</div>
 	</section>
 

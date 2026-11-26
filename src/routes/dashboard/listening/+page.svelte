@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { data, session } from '$lib/data';
 	import { toast } from '$lib/stores/toast';
-	import Shell from '$lib/components/Shell.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import AreaChart from '$lib/components/AreaChart.svelte';
 	import { onMount } from 'svelte';
@@ -70,7 +69,6 @@
 	});
 </script>
 
-<Shell>
 	<header>
 		<h1 class="page-title">Social listening</h1>
 		<p class="page-sub">Track keywords across networks, watch mention velocity and sentiment, and catch trends before your competitors do.</p>
@@ -140,4 +138,3 @@
 			{/each}
 		</div>
 	{/if}
-</Shell>

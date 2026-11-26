@@ -1,0 +1,6 @@
+# Cloudflare Pages routing — SPA fallback.
+# Every path that is not a real static file resolves to the prebuilt app shell
+# so /dashboard/composer and friends never return a bare 404 (blank page).
+# Real files (/_app/*, /images/*, /manifest.json, /sw.js) are served first by
+# Pages, so the fallback only applies to unknown paths.
+/*    /index.html   200

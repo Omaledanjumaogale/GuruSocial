@@ -19,7 +19,7 @@ export default defineSchema({
 		email: s.string(),
 		name: s.string(),
 		passwordHash: s.string(), // sha256(email + ':' + password) via node crypto at signup action
-		role: s.union(s.literal('owner'), s.literal('admin'), s.literal('member')),
+		role: s.union(s.literal('owner'), s.literal('admin'), s.literal('approver'), s.literal('member')),
 		createdAt: s.number(),
 		plan: s.union(s.literal('free'), s.literal('starter'), s.literal('pro'), s.literal('agency'), s.literal('enterprise')),
 		brandVoice: s.optional(s.string()),
@@ -333,5 +333,65 @@ export default defineSchema({
 		lastReportAt: s.optional(s.number()),
 		linkedAt: s.number(),
 		revokedAt: s.optional(s.number())
-	}).index('by_source_hub', ['sourceUserId', 'hubUserId']).index('by_hub', ['hubUserId'])
+	}).index('by_source_hub', ['sourceUserId', 'hubUserId']).index('by_hub', ['hubUserId']),
+
+	// Private support/workspace conversations. Participants (users) may read and
+	// reply; staff access is a separate, permission-scoped admin path.
+	conversations: defineTable({
+		subject: s.string(),
+		participantIds: s.array(s.id('users')),
+		createdById: s.id('users'),
+		staffChannel: s.boolean(),
+		lastMessagePreview: s.optional(s.string()),
+		readAtBy: s.optional(s.any()), // { [userId]: timestamp }
+		createdAt: s.number(),
+		updatedAt: s.number()
+	})
+		.index('by_updated', ['updatedAt'])
+		.index('by_participant', ['participantIds']),
+
+	messages: defineTable({
+		conversationId: s.id('conversations'),
+		// Null for staff/operator replies (an operator session is not a user row).
+		senderId: s.optional(s.id('users')),
+		senderName: s.string(),
+		senderKind: s.union(s.literal('user'), s.literal('staff')),
+		body: s.string(),
+		createdAt: s.number()
+	}).index('by_conversation', ['conversationId']),
+
+	// In-app notifications (outbox pattern: event → row → optional channel).
+	notifications: defineTable({
+		userId: s.id('users'),
+		kind: s.string(), // account | security | product | message | admin
+		title: s.string(),
+		body: s.string(),
+		href: s.optional(s.string()),
+		readAt: s.optional(s.number()),
+		createdAt: s.number()
+	})
+		.index('by_user', ['userId'])
+		.index('by_user_created', ['userId', 'createdAt']),
+
+	notificationPreferences: defineTable({
+		userId: s.id('users'),
+		inApp: s.boolean(),
+		email: s.boolean(),
+		product: s.boolean(),
+		security: s.boolean()
+	}).index('by_user', ['userId']),
+
+	// Privacy-aware activity/audit events. No message bodies or secrets.
+	activityEvents: defineTable({
+		userId: s.optional(s.id('users')),
+		actor: s.string(),
+		eventType: s.string(),
+		targetType: s.string(),
+		targetId: s.string(),
+		outcome: s.string(),
+		metadata: s.optional(s.any()),
+		createdAt: s.number()
+	})
+		.index('by_created', ['createdAt'])
+		.index('by_user', ['userId'])
 });

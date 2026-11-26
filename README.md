@@ -62,7 +62,9 @@ This instance ships connected to a live Convex backend:
 |---|---|
 | Convex backend | `https://beaming-bobcat-890.eu-west-1.convex.cloud` |
 | HTTP API / MCP | `https://beaming-bobcat-890.eu-west-1.convex.site` |
-| Live site | <https://gurusocial.pages.dev> |
+| Live site | <https://gurusocial.ewinproject.org> (also `www.`) |
+| Operator console | <https://gurusocial.ewinproject.org/console> |
+| E-WIN hub channel | `…convex.site/integrations/ewin/{link,report,revoke}` — see [docs/EWIN-INTEGRATION.md](docs/EWIN-INTEGRATION.md) |
 
 Secrets (Resend, Agnes AI, OAuth, R2, admin credentials, E-WIN sync secret) are stored
 as encrypted Convex environment variables on the deployment — never in the repository.
@@ -101,6 +103,27 @@ Schema, functions, HTTP API and MCP endpoint all live in [`convex/`](convex/) an
 5. Deploy. `static/_headers` ships long-lived caching for immutable assets.
 
 The site is a fully static SvelteKit SPA; all dynamic data goes through Convex.
+
+### Delivery model (why page loads never burn a Worker request)
+
+- Every route is materialised as its own `index.html` shell by
+  `scripts/postbuild-static-shells.mjs` (20 shells today).
+- `static/_routes.json` declares `include: []` and `exclude: ["/*"]`, so no path invokes a
+  Cloudflare Function.
+- `static/_redirects` provides the SPA fallback and `static/404.html` is a branded recovery page.
+- Authentication, posts, inbox, admin and messaging stay on Convex — the static path contains no
+  data access and no authorization logic.
+
+### Roles, messaging and notifications
+
+- `convex/rbac.ts` is the authoritative permission matrix (`owner` / `admin` / `approver` / `member`).
+  The interface only reflects permissions; the server enforces them.
+- Private messaging (`convex/messaging.ts`) is participant-checked; operators reply through a
+  session-guarded console path and every action is recorded in `activityEvents`.
+- Notifications are in-app by default; email is opt-in and only sent when Resend is configured.
+- The operator console at `/console` has Overview, Users, Roles, Messages, Broadcast, Audit and System tabs.
+
+Audit deliverables live in [`docs/audits/`](docs/audits/).
 
 ## Install as a PWA on mobile
 
@@ -154,5 +177,8 @@ sidecar/           reverse-api-engineer bridge
 | `npm run check` | svelte-check (currently 0 errors / 0 warnings) |
 | `npm run typecheck:convex` | tsc over `convex/` |
 | `npm run convex:deploy` | deploy backend |
+| `npm run verify:static` | fail the build if a route shell, `_redirects` or `_routes.json` is missing |
+| `npm run assets:check` | verify the ten WebP assets are real, unique and have 640w derivatives |
+| `node scripts/build-assets.mjs` | regenerate WebP derivatives + `reports/asset-manifest.json` |
 
 © 2026 GuruSocial — harmonized with evidence from the audited reference stack; no proprietary code or assets were copied.

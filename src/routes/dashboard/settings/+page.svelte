@@ -13,8 +13,33 @@
 	let ewinCode = $state<string | null>(null);
 	let ewinExpiry = $state<number | null>(null);
 	let issuingCode = $state(false);
+	let prefs = $state({ inApp: true, email: false, product: true, security: true });
+	let savingPrefs = $state(false);
+
+	async function loadPrefs() {
+		if (!$session.token) return;
+		try {
+			prefs = await data.notifications.preferences($session.token);
+		} catch {
+			/* defaults are fine */
+		}
+	}
+
+	async function savePrefs() {
+		if (!$session.token) return;
+		savingPrefs = true;
+		try {
+			await data.notifications.savePreferences($session.token, prefs);
+			toast('Notification preferences saved.');
+		} catch (e: any) {
+			toast(e.message, 'error');
+		} finally {
+			savingPrefs = false;
+		}
+	}
 
 	onMount(() => {
+		void loadPrefs();
 		const u = $session.user;
 		if (u) {
 			name = u.name;
@@ -84,6 +109,28 @@
 				</div>
 				<button class="btn btn-primary" onclick={saveProfile} disabled={saving}>{saving ? 'Saving…' : 'Save profile'}</button>
 			</div>
+		</div>
+
+		<div class="card mb-4 p-5">
+			<h3 class="mb-2 text-sm font-bold text-white">Notifications</h3>
+			<p class="mb-3 text-xs leading-relaxed text-slate-400">In-app notifications cover account, security and product events. Email is opt-in and only sent when the mail provider is configured — nothing is sent from a broadcast without your consent.</p>
+			<div class="space-y-2">
+				{#each [
+					['inApp', 'In-app notifications', 'Bell and Messages updates inside GuruSocial'],
+					['email', 'Email notifications', 'Requires Resend to be configured; opt-in'],
+					['product', 'Product updates', 'New capabilities and workspace tips'],
+					['security', 'Security alerts', 'Sign-ins, password and role changes']
+				] as [key, label, hint]}
+					<label class="flex items-start justify-between gap-3 rounded-xl bg-ink-900 px-3 py-2.5">
+						<span>
+							<span class="block text-sm font-semibold text-slate-200">{label}</span>
+							<span class="block text-2xs text-slate-500">{hint}</span>
+						</span>
+						<input type="checkbox" class="mt-1 h-5 w-5 accent-indigo-500" bind:checked={prefs[key as 'inApp']} />
+					</label>
+				{/each}
+			</div>
+			<button class="btn btn-primary mt-3" onclick={savePrefs} disabled={savingPrefs}>{savingPrefs ? 'Saving…' : 'Save preferences'}</button>
 		</div>
 
 		<div class="card p-5">

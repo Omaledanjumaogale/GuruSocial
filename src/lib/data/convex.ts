@@ -128,6 +128,23 @@ export function createConvexProvider(url: string): DataProvider {
 			create: (token, j) => wrap(() => client.mutation(api.harvest.create, { token, ...j } as any)),
 			updateStatus: (token, id, status, patch) => wrap(() => client.mutation(api.harvest.updateStatus, { token, id, status: status as any, ...patch })),
 			remove: (token, id) => wrap(() => client.mutation(api.harvest.remove, { token, id }))
+		},
+		messaging: {
+			conversations: (token) => wrap(() => client.query(api.messaging.conversations, { token })),
+			messages: (token, conversationId) => wrap(() => client.query(api.messaging.messages, { token, conversationId })),
+			send: (token, conversationId, body) => wrap(() => client.mutation(api.messaging.send, { token, conversationId, body })),
+			start: (token, subject, body) => wrap(() => client.mutation(api.messaging.start, { token, subject, body })),
+			unreadCount: (token) => wrap(() => client.query(api.messaging.unreadCount, { token })),
+			markRead: (token, conversationId) => wrap(() => client.mutation(api.messaging.markRead, { token, conversationId }))
+		},
+		notifications: {
+			list: (token, limit) => wrap(() => client.query(api.notifications.list, { token, limit })),
+			unreadCount: (token) => wrap(() => client.query(api.notifications.unreadCount, { token })),
+			markRead: (token, id) => wrap(() => client.mutation(api.notifications.markRead, { token, id })),
+			markAllRead: (token) => wrap(() => client.mutation(api.notifications.markAllRead, { token })),
+			preferences: (token) => wrap(() => client.query(api.notifications.preferences, { token })),
+			savePreferences: (token, prefs) =>
+				wrap(() => client.mutation(api.notifications.savePreferences, { token, ...prefs }))
 		}
 	};
 }

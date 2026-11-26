@@ -1,0 +1,117 @@
+{
+	"generatedAt": "2026-11-26T00:45:20.828Z",
+	"generator": "built-in image generation (no external model entitlement used)",
+	"transformation": "sharp → WebP q82 (1536w) + q80 (640w)",
+	"assets": [
+		{
+			"name": "dashboard-ecosystem",
+			"source": "/design-assets/generated-source/dashboard-ecosystem.jpg",
+			"fullPath": "/images/generated/dashboard-ecosystem.webp",
+			"responsivePath": "/images/responsive/dashboard-ecosystem-640.webp",
+			"width": 1392,
+			"height": 752,
+			"bytes": 70408,
+			"sha256": "0320c97cd64f47b177e78d3c35b9beb67f90dda82af66d42fd37d5a97390bcb5",
+			"format": "webp"
+		},
+		{
+			"name": "feature-community",
+			"source": "/design-assets/generated-source/feature-community.jpg",
+			"fullPath": "/images/generated/feature-community.webp",
+			"responsivePath": "/images/responsive/feature-community-640.webp",
+			"width": 1392,
+			"height": 752,
+			"bytes": 65536,
+			"sha256": "22cc6298c83c677922c6005fa15f8ae82aa10609cd71a44fcfc957ebb7bc21a0",
+			"format": "webp"
+		},
+		{
+			"name": "feature-learning",
+			"source": "/design-assets/generated-source/feature-learning.jpg",
+			"fullPath": "/images/generated/feature-learning.webp",
+			"responsivePath": "/images/responsive/feature-learning-640.webp",
+			"width": 1392,
+			"height": 752,
+			"bytes": 24678,
+			"sha256": "4b1b29afeac21bea3326b7ebd6ae7519f5ac8ad1afdbbe244fd16463c9048749",
+			"format": "webp"
+		},
+		{
+			"name": "feature-workflow",
+			"source": "/design-assets/generated-source/feature-workflow.jpg",
+			"fullPath": "/images/generated/feature-workflow.webp",
+			"responsivePath": "/images/responsive/feature-workflow-640.webp",
+			"width": 1392,
+			"height": 752,
+			"bytes": 14816,
+			"sha256": "be66d4487cb76923ddc01a44cce3b1441a1bda90d77036c36919352eace49b41",
+			"format": "webp"
+		},
+		{
+			"name": "promo-slide-01",
+			"source": "/design-assets/generated-source/promo-slide-01.jpg",
+			"fullPath": "/images/generated/promo-slide-01.webp",
+			"responsivePath": "/images/responsive/promo-slide-01-640.webp",
+			"width": 1392,
+			"height": 752,
+			"bytes": 34266,
+			"sha256": "4fe0ff3cf63349c3bd2e8bc279fdc6c8a99606b5dd735b579104af10b754fa88",
+			"format": "webp"
+		},
+		{
+			"name": "promo-slide-02",
+			"source": "/design-assets/generated-source/promo-slide-02.jpg",
+			"fullPath": "/images/generated/promo-slide-02.webp",
+			"responsivePath": "/images/responsive/promo-slide-02-640.webp",
+			"width": 1392,
+			"height": 752,
+			"bytes": 23244,
+			"sha256": "c89f10993d9ed1a8247b591613cf043b5e628007937f31a933900bd187cf3e64",
+			"format": "webp"
+		},
+		{
+			"name": "promo-slide-03",
+			"source": "/design-assets/generated-source/promo-slide-03.jpg",
+			"fullPath": "/images/generated/promo-slide-03.webp",
+			"responsivePath": "/images/responsive/promo-slide-03-640.webp",
+			"width": 1392,
+			"height": 752,
+			"bytes": 49330,
+			"sha256": "d6f411c02ee41492b587f69e3663578765409d2cd5a1eee9413cf479dd9591b5",
+			"format": "webp"
+		},
+		{
+			"name": "story-customer",
+			"source": "/design-assets/generated-source/story-customer.jpg",
+			"fullPath": "/images/generated/story-customer.webp",
+			"responsivePath": "/images/responsive/story-customer-640.webp",
+			"width": 1392,
+			"height": 752,
+			"bytes": 46792,
+			"sha256": "59a00b853391c4eaf141b366bbccb4b8b5330f6e337baa2d021b7db08f629cd3",
+			"format": "webp"
+		},
+		{
+			"name": "story-discovery",
+			"source": "/design-assets/generated-source/story-discovery.jpg",
+			"fullPath": "/images/generated/story-discovery.webp",
+			"responsivePath": "/images/responsive/story-discovery-640.webp",
+			"width": 1392,
+			"height": 752,
+			"bytes": 28396,
+			"sha256": "2d568b72f8b4e4c87eea7f0ff1cea52ebb1d1ce66664e129d523a7ff99c6cec8",
+			"format": "webp"
+		},
+		{
+			"name": "story-guide",
+			"source": "/design-assets/generated-source/story-guide.jpg",
+			"fullPath": "/images/generated/story-guide.webp",
+			"responsivePath": "/images/responsive/story-guide-640.webp",
+			"width": 1392,
+			"height": 752,
+			"bytes": 33136,
+			"sha256": "5bea0deb63e3891aebc8a20a2890ce33832780b6ca8bb349ec448e0369ab605a",
+			"format": "webp"
+		}
+	]
+}

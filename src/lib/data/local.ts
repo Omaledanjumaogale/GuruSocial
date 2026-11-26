@@ -6,6 +6,7 @@
  * dataset as `convex/seed.ts`.
  */
 import type { DataProvider } from '../types';
+import { storage } from '../util/storage';
 
 const DB_KEY = 'gurusocial.db.v1';
 const SESSION_KEY = 'gurusocial.session.v1';
@@ -33,6 +34,9 @@ interface LocalDb {
 	competitors: Row[];
 	harvestJobs: Row[];
 	auditLog: Row[];
+	notifications: Row[];
+	conversations: Row[];
+	messages: Row[];
 }
 
 let uidCounter = 0;
@@ -50,18 +54,25 @@ function hash32(input: string): string {
 }
 
 function load(): LocalDb {
-	const raw = localStorage.getItem(DB_KEY);
+	const raw = storage.getItem(DB_KEY);
 	if (raw) return JSON.parse(raw);
 	return {
 		users: [], sessions: [], profiles: [], posts: [], queueSlots: [], analytics: [],
 		audienceSnapshot: [], inboxItems: [], automations: [], agentRuns: [], campaigns: [],
 		contacts: [], brandKits: [], visualTemplates: [], apiKeys: [], webhooks: [], apiLogs: [],
-		competitors: [], harvestJobs: [], auditLog: []
+		competitors: [], harvestJobs: [], auditLog: [], notifications: [], conversations: [], messages: []
 	};
 }
 
 function save(db: LocalDb) {
-	localStorage.setItem(DB_KEY, JSON.stringify(db));
+	storage.setItem(DB_KEY, JSON.stringify(db));
+}
+
+/** Workspace members that can be messaged in demo mode. */
+function directoryFor(db: LocalDb, userId: string) {
+	return db.users
+		.filter((u) => u._id !== userId)
+		.map((u) => ({ _id: u._id, name: u.name, email: u.email, role: u.role }));
 }
 
 export const localProvider: DataProvider = {
@@ -641,6 +652,127 @@ export const localProvider: DataProvider = {
 		async remove(token, id) {
 			const db = load();
 			db.harvestJobs = db.harvestJobs.filter((h) => h._id !== id);
+			save(db);
+		}
+	},
+	messaging: {
+		async conversations(token) {
+			const db = load();
+			const me = db.sessions.find((x) => x.token === token);
+			if (!me) throw new Error('Unauthorized');
+			return db.conversations
+				.filter((c) => c.participantIds.includes(me.userId))
+				.sort((a, b) => b.updatedAt - a.updatedAt)
+				.map((c) => {
+					const msgs = db.messages.filter((m) => m.conversationId === c._id);
+					const last = msgs[msgs.length - 1];
+					const readAt = c.readAtBy?.[me.userId] ?? 0;
+					const peer = c.staffChannel ? { name: 'GuruSocial support', role: 'staff' } : { name: 'Workspace', role: 'member' };
+					return {
+						_id: c._id, subject: c.subject, peerName: peer.name, peerRole: peer.role,
+						lastMessage: last?.body ?? '', staffChannel: !!c.staffChannel, updatedAt: c.updatedAt,
+						unread: msgs.filter((m) => m.senderId !== me.userId && m.createdAt > readAt).length
+					};
+				});
+		},
+		async messages(token, conversationId) {
+			const db = load();
+			const me = db.sessions.find((x) => x.token === token);
+			if (!me) throw new Error('Unauthorized');
+			const convo = db.conversations.find((c) => c._id === conversationId);
+			if (!convo || !convo.participantIds.includes(me.userId)) throw new Error('This conversation is not available to you.');
+			return db.messages.filter((m) => m.conversationId === conversationId).sort((a, b) => a.createdAt - b.createdAt) as any;
+		},
+		async send(token, conversationId, body) {
+			const db = load();
+			const me = db.sessions.find((x) => x.token === token);
+			if (!me) throw new Error('Unauthorized');
+			const convo = db.conversations.find((c) => c._id === conversationId);
+			if (!convo || !convo.participantIds.includes(me.userId)) throw new Error('This conversation is not available to you.');
+			const text = body.trim();
+			if (!text) throw new Error('Write a message first.');
+			if (text.length > 4000) throw new Error('Messages are limited to 4000 characters.');
+			const user = db.users.find((u) => u._id === me.userId);
+			const id = uid();
+			db.messages.push({ _id: id, conversationId, senderId: me.userId, senderName: user?.name ?? 'You', senderKind: 'user', body: text, createdAt: Date.now() });
+			convo.updatedAt = Date.now();
+			convo.readAtBy = { ...(convo.readAtBy ?? {}), [me.userId]: Date.now() };
+			save(db);
+			return { messageId: id };
+		},
+		async start(token, subject, body) {
+			const db = load();
+			const me = db.sessions.find((x) => x.token === token);
+			if (!me) throw new Error('Unauthorized');
+			const user = db.users.find((u) => u._id === me.userId);
+			const now = Date.now();
+			const conversationId = uid();
+			db.conversations.push({ _id: conversationId, subject: subject.trim() || 'Support request', participantIds: [me.userId], staffChannel: true, readAtBy: {}, createdAt: now, updatedAt: now });
+			db.messages.push({ _id: uid(), conversationId, senderId: me.userId, senderName: user?.name ?? 'You', senderKind: 'user', body: body.trim(), createdAt: now });
+			db.notifications.push({ _id: uid(), userId: me.userId, kind: 'message', title: 'Message sent', body: 'Your message reached the GuruSocial team.', href: '/dashboard/messages', readAt: null, createdAt: now });
+			save(db);
+			return { conversationId };
+		},
+		async unreadCount(token) {
+			const db = load();
+			const me = db.sessions.find((x) => x.token === token);
+			if (!me) return 0;
+			let total = 0;
+			for (const c of db.conversations.filter((x) => x.participantIds.includes(me.userId))) {
+				const readAt = c.readAtBy?.[me.userId] ?? 0;
+				total += db.messages.filter((m) => m.conversationId === c._id && m.senderId !== me.userId && m.createdAt > readAt).length;
+			}
+			return total;
+		},
+		async markRead(token, conversationId) {
+			const db = load();
+			const me = db.sessions.find((x) => x.token === token);
+			if (!me) return;
+			const convo = db.conversations.find((c) => c._id === conversationId);
+			if (convo) {
+				convo.readAtBy = { ...(convo.readAtBy ?? {}), [me.userId]: Date.now() };
+				save(db);
+			}
+		}
+	},
+	notifications: {
+		async list(token, limit = 30) {
+			const db = load();
+			const me = db.sessions.find((x) => x.token === token);
+			if (!me) throw new Error('Unauthorized');
+			return db.notifications.filter((n) => n.userId === me.userId).sort((a, b) => b.createdAt - a.createdAt).slice(0, limit) as any;
+		},
+		async unreadCount(token) {
+			const db = load();
+			const me = db.sessions.find((x) => x.token === token);
+			if (!me) return 0;
+			return db.notifications.filter((n) => n.userId === me.userId && !n.readAt).length;
+		},
+		async markRead(token, id) {
+			const db = load();
+			const n = db.notifications.find((x) => x._id === id);
+			if (n) { n.readAt = Date.now(); save(db); }
+		},
+		async markAllRead(token) {
+			const db = load();
+			const me = db.sessions.find((x) => x.token === token);
+			if (!me) return;
+			for (const n of db.notifications) if (n.userId === me.userId && !n.readAt) n.readAt = Date.now();
+			save(db);
+		},
+		async preferences(token) {
+			const db = load();
+			const me = db.sessions.find((x) => x.token === token);
+			const user = db.users.find((u) => u._id === me?.userId);
+			const prefs = user?.notificationPrefs;
+			return { inApp: prefs?.inApp ?? true, email: prefs?.email ?? false, product: prefs?.product ?? true, security: prefs?.security ?? true };
+		},
+		async savePreferences(token, prefs) {
+			const db = load();
+			const me = db.sessions.find((x) => x.token === token);
+			const user = db.users.find((u) => u._id === me?.userId);
+			if (!user) throw new Error('Unauthorized');
+			user.notificationPrefs = prefs;
 			save(db);
 		}
 	}

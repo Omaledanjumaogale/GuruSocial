@@ -200,6 +200,44 @@ export interface QueueSlot {
 	active: boolean;
 }
 
+export interface ConversationSummary {
+	_id: string;
+	subject: string;
+	peerName: string;
+	peerRole: string;
+	lastMessage: string;
+	unread: number;
+	staffChannel: boolean;
+	updatedAt: number;
+}
+
+export interface ChatMessage {
+	_id: string;
+	conversationId: string;
+	senderId: string;
+	senderName: string;
+	senderKind: 'user' | 'staff';
+	body: string;
+	createdAt: number;
+}
+
+export interface NotificationRow {
+	_id: string;
+	kind: string;
+	title: string;
+	body: string;
+	href?: string | null;
+	readAt?: number | null;
+	createdAt: number;
+}
+
+export interface NotificationPrefs {
+	inApp: boolean;
+	email: boolean;
+	product: boolean;
+	security: boolean;
+}
+
 export interface DataProvider {
 	auth: {
 		signUp(email: string, name: string, password: string): Promise<{ token: string; userId: string }>;
@@ -284,5 +322,21 @@ export interface DataProvider {
 		create(token: string, j: { targetUrl: string; goal: string; mode: string }): Promise<{ jobId: string }>;
 		updateStatus(token: string, id: string, status: string, patch?: Partial<HarvestJob>): Promise<void>;
 		remove(token: string, id: string): Promise<void>;
+	};
+	messaging: {
+		conversations(token: string): Promise<ConversationSummary[]>;
+		messages(token: string, conversationId: string): Promise<ChatMessage[]>;
+		send(token: string, conversationId: string, body: string): Promise<{ messageId: string }>;
+		start(token: string, subject: string, body: string): Promise<{ conversationId: string }>;
+		unreadCount(token: string): Promise<number>;
+		markRead(token: string, conversationId: string): Promise<void>;
+	};
+	notifications: {
+		list(token: string, limit?: number): Promise<NotificationRow[]>;
+		unreadCount(token: string): Promise<number>;
+		markRead(token: string, id: string): Promise<void>;
+		markAllRead(token: string): Promise<void>;
+		preferences(token: string): Promise<NotificationPrefs>;
+		savePreferences(token: string, prefs: NotificationPrefs): Promise<void>;
 	};
 }

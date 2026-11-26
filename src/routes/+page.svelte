@@ -2,6 +2,10 @@
 	import { goto } from '$app/navigation';
 	import { storedToken } from '$lib/data';
 	import { onMount } from 'svelte';
+	import ImageSlider from '$lib/components/media/ImageSlider.svelte';
+	import StorySequence from '$lib/components/storytelling/StorySequence.svelte';
+	import NavigationBanner from '$lib/components/banners/NavigationBanner.svelte';
+	import { NAVIGATION_BANNERS } from '$lib/config/navigation-banners';
 
 	const PLATFORMS = [
 		{ name: 'Facebook', color: '#1877f2', glyph: 'f' }, { name: 'Instagram', color: '#d6336c', glyph: '◎' },
@@ -41,6 +45,11 @@
 			</div>
 		</div>
 	</nav>
+
+	<!-- Promotional slider -->
+	<section class="mx-auto max-w-6xl px-4 pt-8 sm:pt-10">
+		<ImageSlider />
+	</section>
 
 	<!-- Hero -->
 	<section class="relative mx-auto max-w-6xl px-4 pb-16 pt-16 sm:pt-24">
@@ -83,6 +92,23 @@
 					<h3 class="mt-3 text-base font-bold text-white">{pillar.title}</h3>
 					<p class="mt-1.5 text-sm leading-relaxed text-slate-400">{pillar.text}</p>
 				</div>
+			{/each}
+		</div>
+	</section>
+
+	<StorySequence />
+
+	<!-- Navigation banners -->
+	<section class="mx-auto max-w-6xl px-4 pb-16">
+		<div class="grid gap-4 md:grid-cols-3">
+			{#each NAVIGATION_BANNERS as banner (banner.id)}
+				<NavigationBanner
+					id={banner.id}
+					inscription={banner.inscription}
+					description={banner.description}
+					href={banner.href}
+					theme={banner.theme}
+				/>
 			{/each}
 		</div>
 	</section>

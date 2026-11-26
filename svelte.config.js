@@ -5,7 +5,9 @@ import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 const config = {
 	preprocess: vitePreprocess(),
 	kit: {
-		// Cloudflare Pages: fully static output with an SPA fallback for client-rendered routes.
+		// Cloudflare Pages: fully static output. `fallback` supplies the SPA shell
+		// and scripts/postbuild-static-shells.mjs materialises a real HTML file for
+		// every route, so page requests never need a Function.
 		adapter: adapter({
 			pages: 'build',
 			assets: 'build',
@@ -13,11 +15,8 @@ const config = {
 			precompress: false,
 			strict: true
 		}),
-		// CRITICAL for SPA fallback hosts: emit absolute asset URLs so deep routes
-		// like /dashboard/composer load /_app/... from the site root, not relative
-		// paths that 404 and render a blank white page.
-		paths: { relative: false },
-		csrf: { checkOrigin: false }
+		// Absolute asset URLs: deep routes must load /_app/... from the site root.
+		paths: { relative: false }
 	}
 };
 

@@ -1,0 +1,6 @@
+{
+	"version": 1,
+	"description": "All page delivery is static (Cloudflare Pages assets). Dynamic work runs on Convex (convex.site), never on a Pages Function, so no request path invokes a Worker.",
+	"include": [],
+	"exclude": ["/*"]
+}

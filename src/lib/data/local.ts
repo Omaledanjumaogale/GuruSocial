@@ -735,6 +735,14 @@ export const localProvider: DataProvider = {
 			});
 		}
 	},
+	billing: {
+		async preflight() { return { billingEnabled: false, reason: 'demo_provider' }; },
+		async hold() { return { held: true }; },
+		async release() {},
+		async refund() {},
+		async liveBalance() { return { linked: false }; },
+		async heartbeat() { return { ok: false, skipped: true, detail: 'Demo provider has no hub connection.' }; }
+	},
 	harvest: {
 		async list(token) {
 			const db = load();

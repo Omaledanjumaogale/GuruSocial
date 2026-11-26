@@ -343,6 +343,14 @@ export interface DataProvider {
 		addKeyword(token: string, keyword: string, platforms: string[]): Promise<string>;
 		removeKeyword(token: string, id: string): Promise<void>;
 	};
+	billing: {
+		preflight(token: string, actionKey: string, target?: string): Promise<any>;
+		hold(token: string, refId: string): Promise<{ held: true }>;
+		release(token: string, refId: string, resultId: string): Promise<void>;
+		refund(token: string, refId: string): Promise<void>;
+		liveBalance(token: string): Promise<any>;
+		heartbeat(token: string): Promise<any>;
+	};
 	harvest: {
 		list(token: string): Promise<HarvestJob[]>;
 		create(token: string, j: { targetUrl: string; goal: string; mode: string }): Promise<{ jobId: string }>;

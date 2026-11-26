@@ -206,7 +206,15 @@ export function createConvexProvider(url: string): DataProvider {
 			addKeyword: (token, keyword, platforms) => wrap(() => client.mutation(api.workspaceExtra.addKeyword, { token, keyword, platforms })),
 			removeKeyword: (token, id) => wrap(() => client.mutation(api.workspaceExtra.removeKeyword, { token, keywordId: id }))
 		},
-		harvest: {
+		billing: {
+		preflight: (token, actionKey, target) => wrap(() => client.mutation(api.billing.preflight, { token, actionKey, target })),
+		hold: (token, refId) => wrap(() => client.mutation(api.billing.hold, { token, refId })),
+		release: (token, refId, resultId) => wrap(() => client.mutation(api.billing.release, { token, refId, resultId })),
+		refund: (token, refId) => wrap(() => client.mutation(api.billing.refund, { token, refId })),
+		liveBalance: (token) => wrap(() => client.action(api.billing.liveBalance, { token })),
+		heartbeat: (token) => wrap(() => client.action(api.billing.heartbeat, { token }))
+	},
+	harvest: {
 			list: (token) => wrap(() => client.query(api.harvest.list, { token })),
 			create: (token, j) => wrap(() => client.mutation(api.harvest.create, { token, ...j } as any)),
 			updateStatus: (token, id, status, patch) => wrap(() => client.mutation(api.harvest.updateStatus, { token, id, status: status as any, ...patch })),

@@ -88,6 +88,9 @@
 		}
 	}
 
+	let pendingCharge = $state<any>(null);
+	const naira = (kobo: number) => '₦' + (kobo / 100).toLocaleString('en-NG', { maximumFractionDigits: 2 });
+
 	async function generate() {
 		if (!topic.trim() && !sourceText.trim()) {
 			toast('Add a topic or a source to start.', 'error');
@@ -102,17 +105,15 @@
 			const settings = $session.user?.settings as any;
 			let result: any[];
 			if (backendMode === 'convex') {
-				// Live: model-backed generation server-side (Agnes AI hub, key held in Convex).
-				try {
-					result = await data.ai.generate($session.token!, { topic, sourceText, platforms: selected });
-				} catch (aiError: any) {
-					toast(aiError.message, 'info');
-					result = generateDrafts({
-						topic, sourceText, brandTone: brandKit?.tone, keyMessages: brandKit?.keyMessages,
-						hashtags: [...(brandKit?.hashtags ?? []), 'gurusocial'], platforms: selected,
-						variantSeed: Math.floor(Math.random() * 997)
-					});
+				// Pay-as-you-use gate: central E-WIN wallet quote before a billable action.
+				const pre = await data.billing.preflight($session.token!, 'record.ai_draft', selected.join(','));
+				if (pre.billingEnabled) {
+					generating = false;
+					pendingCharge = pre;
+					return;
 				}
+				// Live: model-backed generation server-side (Agnes AI hub, key held in Convex).
+				result = await runGeneration(settings);
 			} else if (settings?.llmProvider && settings?.llmApiKey) {
 				result = await generateWithLLM({
 					topic, sourceText, brandTone: brandKit?.tone, keyMessages: useBrandKit ? brandKit?.keyMessages : undefined,
@@ -131,6 +132,38 @@
 			step = 'preview';
 		} catch (e: any) {
 			toast(e.message, 'error');
+		} finally {
+			generating = false;
+		}
+	}
+
+	async function runGeneration(settings: any): Promise<any[]> {
+		try {
+			return await data.ai.generate($session.token!, { topic, sourceText, platforms: selected });
+		} catch (aiError: any) {
+			toast(aiError.message, 'info');
+			return generateDrafts({
+				topic, sourceText, brandTone: brandKit?.tone, keyMessages: brandKit?.keyMessages,
+				hashtags: [...(brandKit?.hashtags ?? []), 'gurusocial'], platforms: selected,
+				variantSeed: Math.floor(Math.random() * 997)
+			});
+		}
+	}
+
+	async function confirmCharge() {
+		const pre = pendingCharge;
+		pendingCharge = null;
+		generating = true;
+		try {
+			await data.billing.hold($session.token!, pre.refId);
+			const result = await runGeneration($session.user?.settings as any);
+			await data.billing.release($session.token!, pre.refId, `ai_draft.${Date.now().toString(36)}`);
+			drafts = result;
+			edited = {};
+			step = 'preview';
+		} catch (e: any) {
+			try { await data.billing.refund($session.token!, pre.refId); } catch { /* best-effort */ }
+			toast(e.message + ' — the charge was refunded to your E-WIN wallet.', 'error');
 		} finally {
 			generating = false;
 		}
@@ -341,3 +374,31 @@
 	<p class="text-sm text-slate-400">Channels are managed in the Channels page — composer drafts will target them once connected.</p>
 	<a href="/dashboard/channels" class="btn btn-primary mt-4 w-full">Go to Channels</a>
 </Modal>
+
+{#if pendingCharge}
+	<div class="fixed inset-0 z-50 grid place-items-center bg-black/70 p-4" role="dialog" aria-modal="true">
+		<div class="card w-full max-w-md p-6">
+			{#if pendingCharge.balanceKobo != null && pendingCharge.balanceKobo < pendingCharge.totalKobo}
+				<h3 class="font-display text-lg font-semibold text-white">Insufficient wallet balance</h3>
+				<p class="mt-2 text-sm text-slate-400">This action costs <strong class="text-white">{naira(pendingCharge.totalKobo)}</strong> but your E-WIN wallet balance is <strong class="text-white">{naira(pendingCharge.balanceKobo)}</strong>. Payment is processed securely through the central E-WIN ecosystem.</p>
+				<div class="mt-5 flex gap-2">
+					<a class="btn btn-primary flex-1" href={`https://ewinproject.org/wallet/confirm?quote=${pendingCharge.quoteId}`} target="_blank" rel="noopener">Deposit funds</a>
+					<button class="btn btn-ghost" onclick={() => (pendingCharge = null)}>Cancel</button>
+				</div>
+			{:else}
+				<h3 class="font-display text-lg font-semibold text-white">Confirm charge</h3>
+				<p class="mt-2 text-sm text-slate-400">AI draft generation is a billable action settled through your central E-WIN wallet.</p>
+				<dl class="mt-4 space-y-2 rounded-xl bg-ink-900 p-4 text-sm">
+					<div class="flex justify-between"><dt class="text-slate-400">Charge</dt><dd class="font-semibold text-white">{naira(pendingCharge.totalKobo)}</dd></div>
+					{#if pendingCharge.balanceKobo != null}<div class="flex justify-between"><dt class="text-slate-400">Wallet balance</dt><dd class="text-slate-200">{naira(pendingCharge.balanceKobo)}</dd></div>{/if}
+					{#if pendingCharge.balanceAfterKobo != null}<div class="flex justify-between"><dt class="text-slate-400">Balance after</dt><dd class="text-slate-200">{naira(pendingCharge.balanceAfterKobo)}</dd></div>{/if}
+					<div class="flex justify-between"><dt class="text-slate-400">Quote expires</dt><dd class="text-slate-200">{new Date(pendingCharge.expiresAt).toLocaleTimeString()}</dd></div>
+				</dl>
+				<div class="mt-5 flex gap-2">
+					<button class="btn btn-primary flex-1" onclick={confirmCharge}>Confirm & generate</button>
+					<button class="btn btn-ghost" onclick={() => (pendingCharge = null)}>Cancel</button>
+				</div>
+			{/if}
+		</div>
+	</div>
+{/if}

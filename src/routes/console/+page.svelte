@@ -221,7 +221,7 @@
 			</a>
 			<div class="flex items-center gap-2 text-xs text-slate-500">
 				{#if backendMode === 'convex'}<span class="chip bg-mint-500/15 text-mint-400">live backend</span>{:else}<span class="chip bg-amber-500/15 text-amber-300">demo backend</span>{/if}
-				<a href="/dashboard" class="btn btn-ghost px-2.5 py-1.5">App →</a>
+				<a href="/dashboard" class="btn btn-ghost px-2.5 py-1.5">← Return to User View</a>
 			</div>
 		</div>
 	</header>

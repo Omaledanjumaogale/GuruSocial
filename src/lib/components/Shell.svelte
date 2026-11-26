@@ -7,6 +7,13 @@
 	import Toaster from './Toaster.svelte';
 	import Logo from './Logo.svelte';
 	import ThemeToggle from './ThemeToggle.svelte';
+
+	let isAdmin = $state(false);
+	$effect(() => {
+		if (typeof localStorage === 'undefined') return;
+		const token = localStorage.getItem('gurusocial.admin.token.v1');
+		isAdmin = Boolean(token);
+	});
 	import { toast } from '$lib/stores/toast';
 	import { onMount } from 'svelte';
 
@@ -168,6 +175,7 @@
 				aria-label="Open navigation">☰</button
 			>
 
+			<a href="/" class="btn btn-ghost btn-sm px-2.5" aria-label="Home" title="Home">⌂</a>
 			<div class="hidden min-w-0 items-center gap-2 lg:flex">
 				<span class="text-xs text-slate-500">Workspace</span>
 				<span class="text-slate-700" aria-hidden="true">/</span>
@@ -199,6 +207,9 @@
 					{/if}
 				</a>
 
+				{#if isAdmin}
+					<a href="/console" class="btn btn-ghost btn-sm hidden sm:inline-flex" title="Switch to the protected Admin Console">⚿ Admin Console</a>
+				{/if}
 				<div class="ml-1 flex items-center gap-2 border-l border-ink-800 pl-2.5">
 					<div
 						class="grid h-8 w-8 place-items-center rounded-full bg-ink-700 text-xs font-bold text-slate-100"

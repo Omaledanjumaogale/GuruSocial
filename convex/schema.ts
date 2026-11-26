@@ -352,6 +352,22 @@ export default defineSchema({
 		createdAt: s.number()
 	}).index('by_user', ['userId']),
 
+	// Local references to central E-WIN wallet quotes (never a second balance)
+	ewinWalletRefs: defineTable({
+		userId: s.id('users'),
+		quoteId: s.string(),
+		actionKey: s.string(),
+		target: s.optional(s.string()),
+		totalKobo: s.number(),
+		balanceKobo: s.optional(s.number()),
+		expiresAt: s.number(),
+		status: s.union(s.literal('quoted'), s.literal('held'), s.literal('released'), s.literal('refunded'), s.literal('failed')),
+		receipt: s.optional(s.string()),
+		resultId: s.optional(s.string()),
+		createdAt: s.number(),
+		updatedAt: s.number()
+	}).index('by_user', ['userId']).index('by_quote', ['quoteId']),
+
 	// EWIN hub connection codes (issued from Settings, verified by E-WIN with HMAC)
 	ewinCodes: defineTable({
 		userId: s.id('users'),

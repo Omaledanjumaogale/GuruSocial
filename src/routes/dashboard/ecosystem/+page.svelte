@@ -6,6 +6,9 @@
 	import type { EwinStatus } from '$lib/types';
 
 	let status = $state<EwinStatus | null>(null);
+	let wallet = $state<any>(null);
+	let hb = $state<any>(null);
+	let hbBusy = $state(false);
 	let loading = $state(true);
 	let code = $state<string | null>(null);
 	let expiresAt = $state<number | null>(null);
@@ -70,7 +73,26 @@
 		{ method: 'GET', path: '/integrations/ewin/health', purpose: 'Unsigned service probe' }
 	];
 
-	onMount(load);
+	onMount(async () => {
+		load();
+		if (backendMode === 'convex') {
+			try { wallet = await data.billing.liveBalance($session.token!); } catch { /* silent */ }
+		}
+	});
+
+	async function sendHeartbeat() {
+		hbBusy = true;
+		try {
+			hb = await data.billing.heartbeat($session.token!);
+			toast(hb?.ok ? `Heartbeat accepted by the hub (config v${hb.result?.version ?? '?'}).` : `Heartbeat not accepted: ${hb?.result ?? hb?.detail ?? 'unavailable'}`, hb?.ok ? 'success' : 'info');
+		} catch (e: any) {
+			toast(e.message, 'error');
+		} finally {
+			hbBusy = false;
+		}
+	}
+
+	const naira = (kobo: number | undefined) => (kobo == null ? '—' : '₦' + (kobo / 100).toLocaleString('en-NG', { maximumFractionDigits: 2 }));
 </script>
 
 <PageHeader
@@ -225,7 +247,28 @@
 		<section class="card p-5">
 			<h2 class="section-title mb-2">What the hub never receives</h2>
 			<ul class="space-y-1.5 text-sm text-slate-400">
-				{#each ['Message bodies and inbox content', 'Platform credentials and OAuth tokens', 'API keys or password material', 'Wallet or payment data'] as item}
+			<div class="card mb-4 p-5">
+			<h2 class="section-title mb-3">Central wallet & platform heartbeat</h2>
+			<div class="grid gap-3 sm:grid-cols-3">
+				<div class="rounded-xl bg-ink-900 px-3 py-2.5">
+					<p class="text-2xs uppercase tracking-widest text-slate-500">Wallet balance (hub ledger)</p>
+					<p class="metric mt-1">{wallet?.exempt ? 'Exempt (super admin)' : wallet?.available ? naira(wallet.availableKobo) : wallet?.linked ? 'Unavailable' : 'Not linked'}</p>
+					{#if wallet?.available}<p class="text-2xs text-slate-500">as of {new Date(wallet.asOf).toLocaleTimeString()}</p>{/if}
+				</div>
+				<div class="rounded-xl bg-ink-900 px-3 py-2.5">
+					<p class="text-2xs uppercase tracking-widest text-slate-500">Settlement</p>
+					<p class="mt-1 text-sm font-semibold text-white">Central E-WIN ledger only</p>
+					<p class="text-2xs text-slate-500">No local balance is stored or calculated.</p>
+				</div>
+				<div class="rounded-xl bg-ink-900 px-3 py-2.5">
+					<p class="text-2xs uppercase tracking-widest text-slate-500">Platform heartbeat</p>
+					<button class="btn btn-ghost btn-sm mt-1.5" onclick={sendHeartbeat} disabled={hbBusy}>{hbBusy ? 'Pinging…' : '↻ Send heartbeat'}</button>
+					{#if hb?.ok}<p class="mt-1 text-2xs text-mint-400">Last accepted {new Date().toLocaleTimeString()}</p>{/if}
+				</div>
+			</div>
+		</div>
+
+			{#each ['Message bodies and inbox content', 'Platform credentials and OAuth tokens', 'API keys or password material', 'Wallet or payment data'] as item}
 					<li class="flex gap-2"><span class="text-slate-600" aria-hidden="true">✕</span>{item}</li>
 				{/each}
 			</ul>

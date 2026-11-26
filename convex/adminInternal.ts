@@ -69,3 +69,12 @@ export const endSession = internalMutation({
 		if (row) await ctx.db.delete(row._id);
 	}
 });
+
+
+export const superAdminEmail = internalQuery({
+	args: {},
+	returns: v.union(v.string(), v.null()),
+	handler: async (ctx) => {
+		return process.env.SUPER_ADMIN_EMAIL ?? null;
+	}
+});

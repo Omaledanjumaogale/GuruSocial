@@ -13,12 +13,12 @@ const failures = [];
 
 const required = [
 	'index.html',
-	'auth/index.html',
-	'console/index.html',
-	'docs/index.html',
-	'dashboard/index.html',
-	'dashboard/composer/index.html',
-	'dashboard/messages/index.html',
+	'auth.html',
+	'console.html',
+	'docs.html',
+	'dashboard.html',
+	'dashboard/composer.html',
+	'dashboard/messages.html',
 	'_redirects',
 	'_routes.json',
 	'404.html',

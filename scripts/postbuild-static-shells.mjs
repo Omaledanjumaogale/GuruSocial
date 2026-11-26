@@ -59,9 +59,12 @@ for (const segments of routes) {
 	// Dynamic segments cannot be materialised as a single file; the fallback and
 	// _redirects still cover them.
 	if (segments.some((s) => s.includes('['))) continue;
-	const targetDir = path.join(buildDir, ...segments);
+	// Clean URLs: Pages serves `/dashboard` from `dashboard.html` with a 200. A
+	// `dashboard/index.html` would instead 308 to `/dashboard/`, which conflicts
+	// with SvelteKit's trailingSlash: 'never'.
+	const targetDir = path.join(buildDir, ...segments.slice(0, -1));
 	fs.mkdirSync(targetDir, { recursive: true });
-	fs.writeFileSync(path.join(targetDir, 'index.html'), shell);
+	fs.writeFileSync(path.join(targetDir, `${segments[segments.length - 1]}.html`), shell);
 	written.push('/' + segments.join('/'));
 }
 

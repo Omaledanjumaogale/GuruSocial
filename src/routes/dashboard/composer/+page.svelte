@@ -244,7 +244,7 @@
 					<input class="input" bind:value={brandTone} placeholder={brandKit?.tone ?? 'confident, plain-spoken, helpful'} />
 					{#if brandKit}
 						<label class="mt-2 flex items-center gap-2 text-xs text-slate-400">
-							<input type="checkbox" bind:checked={useBrandKit} class="accent-indigo-500" />
+							<input type="checkbox" bind:checked={useBrandKit} class="accent-sky-500" />
 							Use key messages & hashtags from brand kit
 						</label>
 					{/if}

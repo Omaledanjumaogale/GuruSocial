@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Logo from '$lib/components/Logo.svelte';
 	import Shell from '$lib/components/Shell.svelte';
 	import { session, restoreSession } from '$lib/data';
 	import { goto } from '$app/navigation';
@@ -51,7 +52,7 @@
 {:else}
 	<div class="flex min-h-screen items-center justify-center bg-ink-950" aria-busy="true" aria-live="polite">
 		<div class="flex flex-col items-center gap-4">
-			<div class="grid h-11 w-11 place-items-center rounded-xl bg-gradient-to-br from-guru-500 to-mint-500 text-lg font-black text-white">G</div>
+			<div class="grid h-11 w-11 place-items-center rounded-xl"><Logo size={44} showWord={false} /></div>
 			<div class="h-1 w-36 overflow-hidden rounded-full bg-ink-700">
 				<div class="h-full w-1/2 animate-pulse rounded-full bg-guru-500"></div>
 			</div>

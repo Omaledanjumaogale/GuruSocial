@@ -318,6 +318,40 @@ export default defineSchema({
 		linkedAt: s.number()
 	}).index('by_provider_account', ['provider', 'providerAccountId']).index('by_email', ['email']),
 
+	// Media library assets (R2-backed uploads registered after presign + PUT)
+	mediaAssets: defineTable({
+		userId: s.id('users'),
+		name: s.string(),
+		contentType: s.string(),
+		size: s.number(),
+		url: s.string(),
+		width: s.optional(s.number()),
+		height: s.optional(s.number()),
+		alt: s.optional(s.string()),
+		createdAt: s.number()
+	}).index('by_user', ['userId']),
+
+	// Approval workflow decisions on posts (RBAC approver/admin/owner)
+	approvalDecisions: defineTable({
+		postId: s.id('posts'),
+		userId: s.id('users'),
+		decision: s.union(s.literal('approved'), s.literal('rejected'), s.literal('changes_requested')),
+		note: s.optional(s.string()),
+		createdAt: s.number()
+	}).index('by_post', ['postId']).index('by_user', ['userId']),
+
+	// Social listening keyword trackers with rolled-up mention volume
+	listeningKeywords: defineTable({
+		userId: s.id('users'),
+		keyword: s.string(),
+		platforms: s.array(s.string()),
+		mentions: s.number(),
+		sentiment: s.union(s.literal('positive'), s.literal('neutral'), s.literal('negative')),
+		velocity: s.number(), // mentions per day, last 7d average
+		active: s.boolean(),
+		createdAt: s.number()
+	}).index('by_user', ['userId']),
+
 	// EWIN hub connection codes (issued from Settings, verified by E-WIN with HMAC)
 	ewinCodes: defineTable({
 		userId: s.id('users'),

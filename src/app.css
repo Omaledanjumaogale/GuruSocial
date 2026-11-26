@@ -1,37 +1,49 @@
 @import 'tailwindcss';
 
 /*
- * GuruSocial design system — enterprise social operations.
+ * GuruSocial design system v2 — enterprise social operations.
  *
- * Typography carries the hierarchy: Inter Tight for display/headings, Inter for
- * body and controls, JetBrains Mono for code, keys and identifiers. The canvas
- * is true black with neutral charcoal elevation (no navy tint). Accent hues keep
- * their meaning: indigo = brand/primary, mint = success/live, amber = attention,
- * rose = destructive. Pages consume the utilities (card, panel, btn, input,
- * chip, page-title) instead of hard-coding colour or size values.
+ * Brand: sky blue (primary), emerald green (live/success), red (destructive
+ * and highlight), white for contrast. Typography: Sora for display and brand
+ * voice, Inter for UI and body, JetBrains Mono for identifiers and code.
+ * Two full themes: true-black "dark" (default) and a crisp white "light".
+ * Every token is theme-switchable — components consume semantic utilities
+ * (card, panel, btn, input, chip, page-title) and never hardcode colours.
  */
 @theme {
 	--font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-	--font-display: 'Inter Tight', 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
+	--font-display: 'Sora', 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
 	--font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
 
-	/* Neutral canvas — true black base, charcoal elevation */
-	--color-ink-950: #000000;
-	--color-ink-900: #0a0a0a;
-	--color-ink-850: #101010;
-	--color-ink-800: #161616;
-	--color-ink-700: #242424;
-	--color-ink-600: #383838;
+	/* Neutral canvas — theme-switchable via --ink-* in :root / [data-theme] */
+	--color-ink-950: var(--ink-950);
+	--color-ink-900: var(--ink-900);
+	--color-ink-850: var(--ink-850);
+	--color-ink-800: var(--ink-800);
+	--color-ink-700: var(--ink-700);
+	--color-ink-600: var(--ink-600);
 
-	/* Brand + semantic accents */
-	--color-guru-300: #a5b4fc;
-	--color-guru-400: #818cf8;
-	--color-guru-500: #6366f1;
-	--color-guru-600: #4f46e5;
+	/* White remaps to the primary text colour per theme; accent-filled
+	   controls force true white through their own utility styles. */
+	--color-white: var(--w);
+
+	/* Brand accent — sky blue */
+	--color-guru-300: #7dd3fc;
+	--color-guru-400: #38bdf8;
+	--color-guru-500: #0ea5e9;
+	--color-guru-600: #0284c7;
+	--color-guru-700: #075985;
+
+	/* Live/success — emerald green */
 	--color-mint-300: #6ee7b7;
 	--color-mint-400: #34d399;
-	--color-mint-500: #22c55e;
+	--color-mint-500: #10b981;
+	--color-mint-600: #059669;
+
+	/* Attention + destructive */
 	--color-amber-guru: #f59e0b;
+	--color-rose-500: #f43f5e;
+	--color-rose-600: #e11d48;
 
 	/* Type scale — 15px UI base, fluid display sizes */
 	--text-2xs: 0.6875rem;
@@ -51,24 +63,53 @@
 	--radius-card: 0.875rem;
 }
 
-:root {
-	--bg: #000000;
-	--surface-1: #0a0a0a;
-	--surface-2: #101010;
-	--surface-3: #181818;
-	--surface-inset: #050505;
-	--text-primary: #f4f4f5;
-	--text-secondary: #b4b4bb;
-	--text-muted: #8b8b93;
+:root,
+:root[data-theme='dark'] {
+	--ink-950: #000000;
+	--ink-900: #0a0a0a;
+	--ink-850: #101010;
+	--ink-800: #161616;
+	--ink-700: #242424;
+	--ink-600: #383838;
+	--w: #f5f7fa;
+	--text-secondary: #b6bdc9;
+	--text-muted: #8b93a1;
 	--border-subtle: #232323;
 	--border-strong: #3b3b3b;
-	--focus-ring: #818cf8;
-	--body-line-height: 1.6;
-	--heading-line-height: 1.15;
+	--focus-ring: #38bdf8;
+	--glow: rgb(2 132 199 / 0.25);
+	color-scheme: dark;
+}
+
+:root[data-theme='light'] {
+	--ink-950: #f1f4f9;
+	--ink-900: #ffffff;
+	--ink-850: #ffffff;
+	--ink-800: #eef2f8;
+	--ink-700: #e2e8f0;
+	--ink-600: #cbd5e1;
+	--w: #0b1220;
+	--text-secondary: #46536b;
+	--text-muted: #64748b;
+	--border-subtle: #e2e8f0;
+	--border-strong: #cbd5e1;
+	--focus-ring: #0284c7;
+	--glow: rgb(14 165 233 / 0.18);
+	color-scheme: light;
+}
+
+/* Slate text steps used widely for secondary copy — switch per theme so the
+   light canvas keeps proper contrast without touching component markup. */
+:root[data-theme='light'] {
+	--color-slate-100: #334155;
+	--color-slate-200: #3f4d63;
+	--color-slate-300: #475569;
+	--color-slate-400: #5b6b83;
+	--color-slate-500: #64748b;
+	--color-slate-600: #8a97ab;
 }
 
 html {
-	color-scheme: dark;
 	scrollbar-gutter: stable;
 	-webkit-text-size-adjust: 100%;
 	text-size-adjust: 100%;
@@ -76,37 +117,30 @@ html {
 
 body {
 	min-height: 100vh;
-	background: var(--bg);
-	color: var(--text-primary);
+	background: var(--ink-950);
+	color: var(--w);
 	font-family: var(--font-sans);
 	font-size: 15px;
-	line-height: var(--body-line-height);
+	line-height: 1.6;
 	font-feature-settings: 'cv11', 'ss01';
 	font-variant-ligatures: contextual;
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
 	text-rendering: optimizeLegibility;
 	overscroll-behavior-y: none;
+	transition: background-color 0.25s ease, color 0.25s ease;
 }
 
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
+h1, h2, h3, h4, h5, h6 {
 	font-family: var(--font-display);
-	line-height: var(--heading-line-height);
-	letter-spacing: -0.022em;
-	font-weight: 650;
+	line-height: 1.14;
+	letter-spacing: -0.025em;
+	font-weight: 680;
 	text-wrap: balance;
 }
 
-p {
-	text-wrap: pretty;
-}
+p { text-wrap: pretty; }
 
-/* Visible, consistent keyboard focus on every interactive element. */
 :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
 	outline: 2px solid var(--focus-ring);
 	outline-offset: 2px;
@@ -114,17 +148,15 @@ p {
 }
 
 ::selection {
-	background: rgba(99, 102, 241, 0.35);
-	color: #fff;
+	background: rgb(14 165 233 / 0.3);
+	color: inherit;
 }
 
-/* Numeric alignment for metrics, dates and money. */
 .tabular {
 	font-variant-numeric: tabular-nums;
 	font-feature-settings: 'tnum';
 }
 
-/* Contained horizontal scrolling for wide tables on small screens. */
 .table-wrap {
 	overflow-x: auto;
 	-webkit-overflow-scrolling: touch;
@@ -133,28 +165,18 @@ p {
 
 * {
 	scrollbar-width: thin;
-	scrollbar-color: var(--color-ink-600) transparent;
+	scrollbar-color: var(--ink-600) transparent;
 }
-*::-webkit-scrollbar {
-	width: 8px;
-	height: 8px;
-}
-*::-webkit-scrollbar-thumb {
-	background: var(--color-ink-600);
-	border-radius: 999px;
-}
+*::-webkit-scrollbar { width: 8px; height: 8px; }
+*::-webkit-scrollbar-thumb { background: var(--ink-600); border-radius: 999px; }
 
-img,
-svg,
-video {
-	max-width: 100%;
-	height: auto;
-}
+img, svg, video { max-width: 100%; height: auto; }
 
 /* ------------------------------- typography ------------------------------- */
 
 @utility page-title {
-	@apply font-display text-display-sm font-semibold text-white;
+	@apply font-display text-display-sm font-semibold;
+	color: var(--w);
 	letter-spacing: -0.03em;
 }
 
@@ -163,7 +185,8 @@ video {
 }
 
 @utility section-title {
-	@apply font-display text-base font-semibold tracking-tight text-white;
+	@apply font-display text-base font-semibold tracking-tight;
+	color: var(--w);
 }
 
 @utility eyebrow {
@@ -172,7 +195,8 @@ video {
 }
 
 @utility metric {
-	@apply font-display text-2xl font-semibold text-white;
+	@apply font-display text-2xl font-semibold;
+	color: var(--w);
 	font-variant-numeric: tabular-nums;
 	letter-spacing: -0.02em;
 }
@@ -187,7 +211,12 @@ video {
 	@apply rounded-card border border-ink-700 bg-ink-850;
 	box-shadow:
 		0 1px 0 0 rgb(255 255 255 / 0.02),
-		0 18px 40px -28px rgb(0 0 0 / 0.9);
+		0 18px 40px -28px rgb(0 0 0 / 0.55);
+}
+
+:root[data-theme='light'] .card {
+	box-shadow: 0 1px 2px rgb(15 23 42 / 0.04), 0 12px 32px -18px rgb(15 23 42 / 0.12);
+	border-color: #e2e8f0;
 }
 
 @utility panel {
@@ -213,22 +242,38 @@ video {
 	@apply min-h-8 rounded-lg px-3 py-1.5 text-xs;
 }
 
+/* Primary CTA — sky blue; true white label on both themes. */
 @utility btn-primary {
-	@apply bg-guru-600 text-white shadow-lg shadow-guru-600/20 hover:bg-guru-500;
+	background: linear-gradient(135deg, #0ea5e9, #0284c7);
+	color: #ffffff;
+	box-shadow: 0 8px 24px -8px var(--glow), 0 1px 0 rgb(255 255 255 / 0.12) inset;
 }
+.btn-primary:hover { background: linear-gradient(135deg, #38bdf8, #0ea5e9); }
 
 @utility btn-ghost {
-	@apply border border-ink-600 bg-ink-850/60 text-slate-200 hover:border-ink-600/60 hover:bg-ink-800 hover:text-white;
+	@apply border border-ink-600 bg-ink-850/60 text-slate-300 hover:border-guru-500/50 hover:bg-ink-800 hover:text-white;
 }
 
 @utility btn-danger {
-	@apply bg-rose-600/90 text-white hover:bg-rose-500;
+	background: linear-gradient(135deg, #f43f5e, #e11d48);
+	color: #ffffff;
+	box-shadow: 0 8px 24px -10px rgb(225 29 72 / 0.45);
+}
+.btn-danger:hover { background: linear-gradient(135deg, #fb7185, #f43f5e); }
+
+@utility btn-success {
+	background: linear-gradient(135deg, #34d399, #059669);
+	color: #ffffff;
 }
 
 @utility input {
-	@apply w-full rounded-lg border border-ink-600 bg-ink-800 px-3.5 py-2.5 text-sm text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-guru-500 focus:ring-2 focus:ring-guru-500/20;
+	@apply w-full rounded-lg border bg-ink-800 px-3.5 py-2.5 text-sm outline-none transition;
 	border-color: var(--border-strong);
+	color: var(--w);
+	placeholder-color: var(--text-muted);
 }
+.input::placeholder { color: var(--text-muted); }
+.input:focus { border-color: var(--color-guru-500); box-shadow: 0 0 0 3px rgb(14 165 233 / 0.18); }
 
 @utility label {
 	@apply mb-1.5 block text-xs font-semibold text-slate-300;
@@ -243,10 +288,16 @@ video {
 	@apply rounded-md border border-ink-600 bg-ink-800 px-1.5 py-0.5 font-mono text-2xs text-slate-300;
 }
 
+/* Brand gradient text (logo wordmark, hero accents). */
+@utility brand-gradient {
+	background: linear-gradient(100deg, #38bdf8 0%, #22d3ee 45%, #34d399 100%);
+	-webkit-background-clip: text;
+	background-clip: text;
+	color: transparent;
+}
+
 @media (prefers-reduced-motion: reduce) {
-	*,
-	*::before,
-	*::after {
+	*, *::before, *::after {
 		animation-duration: 0.01ms !important;
 		animation-iteration-count: 1 !important;
 		transition-duration: 0.01ms !important;

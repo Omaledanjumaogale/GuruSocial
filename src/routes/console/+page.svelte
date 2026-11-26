@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Logo from '$lib/components/Logo.svelte';
 	import { backendMode } from '$lib/data';
 	import { ConvexHttpClient } from 'convex/browser';
 	import { anyApi } from 'convex/server';
@@ -215,8 +216,7 @@
 	<header class="border-b border-ink-700 bg-ink-900">
 		<div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-4 py-3.5">
 			<a href="/" class="flex items-center gap-2.5">
-				<div class="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-guru-500 to-mint-500 text-lg font-black text-white">G</div>
-				<span class="font-black tracking-tight text-white">GuruSocial</span>
+				<Logo size={36} wordClass="text-base" />
 				<span class="chip bg-rose-500/15 text-2xs text-rose-300">super admin</span>
 			</a>
 			<div class="flex items-center gap-2 text-xs text-slate-500">

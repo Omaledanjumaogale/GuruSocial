@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Logo from '$lib/components/Logo.svelte';
 	import { storedToken } from '$lib/data';
 	import { onMount } from 'svelte';
 
@@ -56,8 +57,7 @@
 	<nav class="sticky top-0 z-40 border-b border-ink-800 bg-ink-950/85 backdrop-blur">
 		<div class="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
 			<a href="/" class="flex items-center gap-2.5">
-				<div class="grid h-8 w-8 place-items-center rounded-lg bg-gradient-to-br from-guru-500 to-mint-500 font-display text-sm font-extrabold text-white">G</div>
-				<span class="font-display text-base font-bold tracking-tight text-white">GuruSocial</span>
+				<Logo size={32} wordClass="text-base" />
 			</a>
 			<div class="flex items-center gap-2">
 				<a href="/docs" class="btn btn-ghost btn-sm hidden sm:inline-flex">API docs</a>

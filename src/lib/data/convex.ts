@@ -196,7 +196,15 @@ export function createConvexProvider(url: string): DataProvider {
 			generate: (token, req) => wrap(() => client.action(api.ai.generate, { token, topic: req.topic, sourceText: req.sourceText ?? undefined, platforms: req.platforms }))
 		},
 		media: {
-			presignUpload: (token, fileName, contentType) => wrap(() => client.action(api.media.presignUpload, { token, fileName, contentType }))
+			presignUpload: (token, fileName, contentType) => wrap(() => client.action(api.media.presignUpload, { token, fileName, contentType })),
+			registerAsset: (token, a) => wrap(() => client.mutation(api.workspaceExtra.register, { token, ...a })),
+			listAssets: (token) => wrap(() => client.query(api.workspaceExtra.list, { token })),
+			removeAsset: (token, id) => wrap(() => client.mutation(api.workspaceExtra.remove, { token, assetId: id })),
+			approvals: (token) => wrap(() => client.query(api.workspaceExtra.pendingApprovals, { token })),
+			decideApproval: (token, postId, decision, note) => wrap(() => client.mutation(api.workspaceExtra.decideApproval, { token, postId, decision, note })),
+			listening: (token) => wrap(() => client.query(api.workspaceExtra.listKeywords, { token })),
+			addKeyword: (token, keyword, platforms) => wrap(() => client.mutation(api.workspaceExtra.addKeyword, { token, keyword, platforms })),
+			removeKeyword: (token, id) => wrap(() => client.mutation(api.workspaceExtra.removeKeyword, { token, keywordId: id }))
 		},
 		harvest: {
 			list: (token) => wrap(() => client.query(api.harvest.list, { token })),

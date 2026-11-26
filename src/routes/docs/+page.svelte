@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Logo from '$lib/components/Logo.svelte';
 	const ENDPOINTS = [
 		{ method: 'POST', path: '/api/v1/posts', desc: 'Publish now, schedule or save a draft. Body: content, platforms[], scheduledAt (ISO), mediaUrls[], firstComment, draft. Sandbox keys return a validation payload instead of publishing.' },
 		{ method: 'GET', path: '/api/v1/posts?status=&limit=', desc: 'List posts. Filter by status: draft, pending_approval, scheduled, published, failed.' },
@@ -22,8 +23,7 @@
 <div class="mx-auto max-w-4xl px-4 py-10">
 	<nav class="mb-8 flex items-center justify-between">
 		<a href="/" class="flex items-center gap-2.5">
-			<div class="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-guru-500 to-mint-500 text-lg font-black text-white">G</div>
-			<span class="font-black tracking-tight text-white">GuruSocial</span>
+			<Logo size={36} wordClass="text-base" />
 		</a>
 		<a href="/dashboard" class="btn btn-ghost">Open dashboard</a>
 	</nav>

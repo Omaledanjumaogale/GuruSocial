@@ -41,6 +41,7 @@ export const NAVIGATION: NavSection[] = [
 		items: [
 			{ id: 'analytics', label: 'Analytics', href: '/dashboard/analytics', icon: '◔', permission: 'analytics.read', mobilePriority: 4 },
 			{ id: 'reports', label: 'Reports', href: '/dashboard/reports', icon: '▥', permission: 'analytics.read' },
+			{ id: 'listening', label: 'Social listening', href: '/dashboard/listening', icon: '◍', permission: 'analytics.read' },
 			{ id: 'agents', label: 'AI agents & automations', href: '/dashboard/agents', icon: '⚙', permission: 'workspace.read' },
 			{ id: 'studio', label: 'Visual studio', href: '/dashboard/studio', icon: '▣', permission: 'workspace.read' }
 		]
@@ -56,6 +57,8 @@ export const NAVIGATION: NavSection[] = [
 	{
 		group: 'Enterprise',
 		items: [
+			{ id: 'media', label: 'Media library', href: '/dashboard/media', icon: '◫', permission: 'workspace.read' },
+			{ id: 'approvals', label: 'Approval flows', href: '/dashboard/approvals', icon: '✓', permission: 'workspace.read' },
 			{ id: 'ecosystem', label: 'E-WIN ecosystem', href: '/dashboard/ecosystem', icon: '⟡', permission: 'workspace.read' },
 			{ id: 'integrations', label: 'Reverse Studio', href: '/dashboard/integrations', icon: '⟐', permission: 'workspace.read' },
 			{ id: 'developer', label: 'Developer & API', href: '/dashboard/developer', icon: '⌨', permission: 'developer.keys' },

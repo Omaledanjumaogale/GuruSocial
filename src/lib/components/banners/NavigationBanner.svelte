@@ -10,7 +10,7 @@
 	let { id, inscription, description, href, theme }: Props = $props();
 
 	const palette = {
-		indigo: { from: '#4f46e5', to: '#6366f1', text: '#c7d2fe' },
+		indigo: { from: '#0284c7', to: '#0ea5e9', text: '#bae6fd' },
 		mint: { from: '#0f766e', to: '#22c55e', text: '#a7f3d0' },
 		amber: { from: '#b45309', to: '#f59e0b', text: '#fde68a' }
 	}[theme];

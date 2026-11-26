@@ -87,7 +87,7 @@
 
 		<div class="card mt-4 p-5">
 			<h3 class="mb-2 text-sm font-bold text-white">{METRICS.find((m) => m[0] === metric)?.[1]} over time</h3>
-			<AreaChart points={points} height={220} color={metric === 'impressions' ? '#6366f1' : '#34d399'} />
+			<AreaChart points={points} height={220} color={metric === 'impressions' ? '#38bdf8' : '#34d399'} />
 		</div>
 
 		<div class="mt-4 grid gap-4 lg:grid-cols-3">

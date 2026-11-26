@@ -1,4 +1,6 @@
 <script lang="ts">
+	import Logo from '$lib/components/Logo.svelte';
+	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
 	import { goto } from '$app/navigation';
 	import { storedToken } from '$lib/data';
 	import { onMount } from 'svelte';
@@ -35,12 +37,12 @@
 	<nav class="sticky top-0 z-40 border-b border-ink-700/60 bg-ink-900/80 backdrop-blur">
 		<div class="mx-auto flex max-w-6xl items-center justify-between px-4 py-3.5">
 			<div class="flex items-center gap-2.5">
-				<div class="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-guru-500 to-mint-500 text-lg font-black text-white">G</div>
-				<span class="text-lg font-black tracking-tight text-white">GuruSocial</span>
+				<Logo size={36} wordClass="text-lg" />
 			</div>
 			<div class="flex items-center gap-2">
 				<a href="/pricing" class="btn btn-ghost btn-sm hidden sm:inline-flex">Pricing</a>
 				<a href="/docs" class="btn btn-ghost btn-sm hidden sm:inline-flex">API & MCP docs</a>
+				<ThemeToggle compact />
 				<a href="/auth" class="btn btn-ghost btn-sm">{hasSession ? 'Open dashboard' : 'Sign in'}</a>
 				<a href="/dashboard" class="btn btn-primary">{hasSession ? 'Dashboard' : 'Start free'}</a>
 			</div>

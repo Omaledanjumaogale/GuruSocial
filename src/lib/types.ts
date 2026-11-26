@@ -334,6 +334,14 @@ export interface DataProvider {
 	};
 	media: {
 		presignUpload(token: string, fileName: string, contentType: string): Promise<{ uploadUrl: string; publicUrl: string; key: string }>;
+		registerAsset(token: string, a: { name: string; contentType: string; size: number; url: string }): Promise<string>;
+		listAssets(token: string): Promise<Array<{ _id: string; name: string; contentType: string; size: number; url: string; createdAt: number }>>;
+		removeAsset(token: string, id: string): Promise<void>;
+		approvals(token: string): Promise<Array<{ _id: string; content: string; platforms: string[]; status: string; scheduledAt: number | null; createdAt: number }>>;
+		decideApproval(token: string, postId: string, decision: 'approved' | 'rejected' | 'changes_requested', note?: string): Promise<void>;
+		listening(token: string): Promise<Array<{ _id: string; keyword: string; platforms: string[]; mentions: number; velocity: number; sentiment: string; active: boolean }>>;
+		addKeyword(token: string, keyword: string, platforms: string[]): Promise<string>;
+		removeKeyword(token: string, id: string): Promise<void>;
 	};
 	harvest: {
 		list(token: string): Promise<HarvestJob[]>;

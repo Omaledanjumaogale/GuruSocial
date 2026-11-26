@@ -5,6 +5,8 @@
 	import { can } from '$lib/auth/rbac';
 	import { NAVIGATION, MOBILE_NAV } from '$lib/config/navigation';
 	import Toaster from './Toaster.svelte';
+	import Logo from './Logo.svelte';
+	import ThemeToggle from './ThemeToggle.svelte';
 	import { toast } from '$lib/stores/toast';
 	import { onMount } from 'svelte';
 
@@ -97,15 +99,11 @@
 		aria-label="Workspace navigation"
 	>
 		<div class="flex items-center gap-3 border-b border-ink-800 px-5 py-5">
-			<div
-				class="grid h-9 w-9 place-items-center rounded-lg bg-gradient-to-br from-guru-500 to-mint-500 font-display text-base font-extrabold text-white shadow-lg shadow-guru-600/25"
-			>
-				G
-			</div>
+			<Logo size={36} />
 			<div class="min-w-0">
-				<p class="truncate font-display text-[15px] font-bold tracking-tight text-white">GuruSocial</p>
 				<p class="truncate text-2xs text-slate-500">Social operations · E-WIN</p>
 			</div>
+			<ThemeToggle compact />
 			<button
 				class="ml-auto text-slate-400 hover:text-white lg:hidden"
 				onclick={() => (open = false)}

@@ -37,6 +37,9 @@ interface LocalDb {
 	notifications: Row[];
 	conversations: Row[];
 	messages: Row[];
+	mediaAssets: Row[];
+	approvalDecisions: Row[];
+	listeningKeywords: Row[];
 }
 
 let uidCounter = 0;
@@ -60,7 +63,8 @@ function load(): LocalDb {
 		users: [], sessions: [], profiles: [], posts: [], queueSlots: [], analytics: [],
 		audienceSnapshot: [], inboxItems: [], automations: [], agentRuns: [], campaigns: [],
 		contacts: [], brandKits: [], visualTemplates: [], apiKeys: [], webhooks: [], apiLogs: [],
-		competitors: [], harvestJobs: [], auditLog: [], notifications: [], conversations: [], messages: []
+		competitors: [], harvestJobs: [], auditLog: [], notifications: [], conversations: [], messages: [],
+		mediaAssets: [], approvalDecisions: [], listeningKeywords: []
 	};
 }
 
@@ -664,6 +668,56 @@ export const localProvider: DataProvider = {
 		}
 	},
 	media: {
+		async registerAsset(token, a) {
+			const db = load();
+			const sess = db.sessions.find((x) => x.token === token);
+			const id = uid();
+			db.mediaAssets.push({ _id: id, userId: sess!.userId, ...a, createdAt: Date.now() });
+			save(db);
+			return id;
+		},
+		async listAssets(token) {
+			const db = load();
+			const sess = db.sessions.find((x) => x.token === token);
+			return db.mediaAssets.filter((m) => m.userId === sess?.userId).sort((a, b) => b.createdAt - a.createdAt) as any;
+		},
+		async removeAsset(token, id) {
+			const db = load();
+			db.mediaAssets = db.mediaAssets.filter((m) => m._id !== id);
+			save(db);
+		},
+		async approvals(token) {
+			const db = load();
+			const sess = db.sessions.find((x) => x.token === token);
+			return db.posts.filter((p) => p.userId === sess?.userId && (p.status === 'pending_approval' || p.status === 'approval_requested')).sort((a, b) => b.createdAt - a.createdAt) as any;
+		},
+		async decideApproval(token, postId, decision) {
+			const db = load();
+			const p = db.posts.find((x) => x._id === postId);
+			if (p) p.status = decision === 'approved' ? 'approved' : 'draft';
+			const sess = db.sessions.find((x) => x.token === token);
+			db.approvalDecisions.push({ _id: uid(), postId, userId: sess!.userId, decision, note: '', createdAt: Date.now() });
+			save(db);
+		},
+		async listening(token) {
+			const db = load();
+			const sess = db.sessions.find((x) => x.token === token);
+			return db.listeningKeywords.filter((k) => k.userId === sess?.userId) as any;
+		},
+		async addKeyword(token, keyword, platforms) {
+			const db = load();
+			const sess = db.sessions.find((x) => x.token === token);
+			const id = uid();
+			const seed = Math.abs([...keyword].reduce((a, c) => (a * 31 + c.charCodeAt(0)) | 0, 7)) % 400 + 40;
+			db.listeningKeywords.push({ _id: id, userId: sess!.userId, keyword, platforms, mentions: seed, velocity: Math.round(seed / 7), sentiment: seed % 3 === 0 ? 'negative' : seed % 5 === 0 ? 'neutral' : 'positive', active: true, createdAt: Date.now() });
+			save(db);
+			return id;
+		},
+		async removeKeyword(token, id) {
+			const db = load();
+			db.listeningKeywords = db.listeningKeywords.filter((k) => k._id !== id);
+			save(db);
+		},
 		async presignUpload(token, fileName, contentType) {
 			// Demo mode: inline the file as a data URL so previews keep working offline.
 			return new Promise((resolve, reject) => {

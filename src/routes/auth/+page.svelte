@@ -1,4 +1,6 @@
 <script lang="ts">
+	import Logo from '$lib/components/Logo.svelte';
+	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
 	import { signIn, signUp, completeOAuth, friendlyError, CONVEX_HTTP_URL, PUBLIC_APP_URL, backendMode } from '$lib/data';
 	import { goto } from '$app/navigation';
 	import { toast } from '$lib/stores/toast';
@@ -115,8 +117,7 @@
 <div class="grid min-h-screen lg:grid-cols-2">
 	<div class="hidden flex-col justify-between border-r border-ink-700 bg-ink-900 p-10 lg:flex">
 		<a href="/" class="flex items-center gap-2.5">
-			<div class="grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-guru-500 to-mint-500 text-lg font-black text-white">G</div>
-			<span class="text-lg font-black tracking-tight text-white">GuruSocial</span>
+			<Logo size={40} wordClass="text-lg" />
 		</a>
 		<div>
 			<h2 class="max-w-md font-display text-display-sm font-semibold leading-[1.12] tracking-tight text-white">
@@ -141,8 +142,7 @@
 	<div class="flex items-center justify-center p-6">
 		<div class="w-full max-w-sm">
 			<div class="mb-8 flex items-center gap-2.5 lg:hidden">
-				<div class="grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-guru-500 to-mint-500 text-lg font-black text-white">G</div>
-				<span class="text-lg font-black tracking-tight text-white">GuruSocial</span>
+				<Logo size={40} wordClass="text-lg" />
 			</div>
 
 			<h1 class="font-display text-[2rem] font-semibold leading-tight tracking-tight text-white">{title}</h1>
@@ -265,6 +265,7 @@
 				</button>
 			</p>
 			<div class="mt-4 flex justify-center gap-4 text-xs text-slate-500">
+				<ThemeToggle compact />
 				<a href="/" class="hover:text-slate-300">← Back to site</a>
 				<a href="/console" class="hover:text-slate-300">Operator console</a>
 			</div>

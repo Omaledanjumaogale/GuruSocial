@@ -177,7 +177,7 @@
 			<p class="mt-1 text-xs text-slate-600">{"{{fromUser}}"} is replaced with the sender's name. AI-assisted rows polish the template per conversation.</p>
 		</div>
 		<label class="flex items-center gap-2 text-sm text-slate-300">
-			<input type="checkbox" bind:checked={usesAi} class="accent-indigo-500" />
+			<input type="checkbox" bind:checked={usesAi} class="accent-sky-500" />
 			✦ AI-assisted reply
 		</label>
 		<div class="flex justify-end gap-2">

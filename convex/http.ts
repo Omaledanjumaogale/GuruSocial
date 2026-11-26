@@ -147,7 +147,7 @@ function appUrlFromState(state: string | null): string {
 		const decoded = JSON.parse(decodeURIComponent(escape(atob(b64))));
 		if (decoded?.a && /^https:\/\//.test(decoded.a)) return decoded.a.replace(/\/$/, '');
 	} catch { /* fall through */ }
-	return 'https://gurusocial.pages.dev';
+	return 'https://gurusocial.ewinproject.org';
 }
 
 const googleCallback = httpActionGeneric(async (ctx, request) => handleError(async () => {

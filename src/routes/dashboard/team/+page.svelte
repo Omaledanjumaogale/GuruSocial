@@ -37,8 +37,8 @@
 
 <div class="grid gap-4 lg:grid-cols-2">
 	<div>
-		<h1 class="text-2xl font-black tracking-tight text-white">Team & audit</h1>
-		<p class="mt-1 mb-4 text-sm text-slate-400">Roles separate who can read, draft, approve and administer — publishing to real platforms always shows in the audit trail.</p>
+		<h1 class="page-title">Team & audit</h1>
+		<p class="page-sub mb-4">Roles separate who can read, draft, approve and administer — publishing to real platforms always shows in the audit trail.</p>
 
 		<div class="card mb-4 p-5">
 			<h3 class="mb-3 text-sm font-bold text-white">Invite a teammate</h3>

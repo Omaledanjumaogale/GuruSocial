@@ -2,16 +2,15 @@
  * Data layer selector + session store.
  *
  * Live mode: when VITE_CONVEX_URL is set, reads/writes go to the deployed Convex
- * backend. Network failures fall through to the demo provider so the interface
- * keeps rendering, and live data resumes automatically on recovery.
- * Demo mode: without VITE_CONVEX_URL the demo provider is used directly.
- *
- * Storage is wrapped (src/lib/util/storage.ts) so blocked localStorage in a
- * sandboxed frame or private window can never break sign-in.
+ * backend. Reads may fall back to the bundled demo dataset during a network
+ * outage so the interface keeps rendering; writes never fall back (a silently
+ * dropped write is worse than an error), and authentication never falls back at
+ * all. Storage is wrapped (src/lib/util/storage.ts) so blocked localStorage can
+ * never break sign-in.
  */
 import { writable, get } from 'svelte/store';
 import type { DataProvider, User } from '../types';
-import { localProvider } from './local';
+import { localProvider, ensureDemoSession } from './local';
 import { createConvexProvider } from './convex';
 import { storage } from '../util/storage';
 
@@ -24,13 +23,26 @@ export const PUBLIC_APP_URL =
 	(typeof location !== 'undefined' ? location.origin : 'https://gurusocial.ewinproject.org');
 export const backendMode: 'convex' | 'local' = CONVEX_URL ? 'convex' : 'local';
 
-/** Only network-shaped failures trigger the demo fallback. */
+/**
+ * Which data is actually on screen. The shell reads this to label demo
+ * fallbacks honestly: mock data is shown, and live data replaces it as soon as
+ * the backend answers again.
+ */
+export const dataSource = writable<'live' | 'demo'>(CONVEX_URL ? 'live' : 'demo');
+
+/** Only network-shaped failures trigger the demo read fallback. */
 function isNetworkError(e: unknown): boolean {
 	const msg = String((e as any)?.message ?? e);
-	if (/unauthor|invalid|expired|already exists|incorrect|must be|required|not found|forbidden|permission/i.test(msg)) {
+	if (
+		/unauthor|invalid|expired|already exists|incorrect|must be|required|not found|forbidden|permission|not available/i.test(
+			msg
+		)
+	) {
 		return false;
 	}
-	return /failed to fetch|networkerror|network error|typeerror|fetch failed|timeout|econn|dns|load failed|offline/i.test(msg);
+	return /failed to fetch|networkerror|network error|typeerror|fetch failed|timed out|timeout|econn|dns|load failed|offline|unreachable/i.test(
+		msg
+	);
 }
 
 /**
@@ -52,8 +64,15 @@ const READ_METHODS: Record<string, string[]> = {
 	keys: ['listKeys', 'webhooks', 'logs', 'auditTrail'],
 	harvest: ['list'],
 	messaging: ['conversations', 'messages', 'unreadCount'],
-	notifications: ['list', 'preferences']
+	notifications: ['list', 'preferences'],
+	ewin: ['status']
 };
+
+/** Reads that may degrade to demo data during an outage. */
+const FALLBACK_READS = new Set(
+	Object.entries(READ_METHODS).flatMap(([section, methods]) => methods.map((m) => `${section}.${m}`))
+);
+FALLBACK_READS.add('auth.me');
 
 function withReadCache(provider: DataProvider): DataProvider {
 	const cache = new Map<string, { at: number; value: unknown }>();
@@ -82,15 +101,30 @@ function withFallback(convex: DataProvider, local: DataProvider): DataProvider {
 	const wrapSection = <S extends keyof DataProvider>(section: S): DataProvider[S] => {
 		const out: Record<string, unknown> = {};
 		for (const [method, fn] of Object.entries(convex[section])) {
+			const key = `${String(section)}.${method}`;
+			const mayUseDemo = FALLBACK_READS.has(key);
 			out[method] = async (...args: any[]) => {
 				try {
-					return await (fn as any)(...args);
+					const value = await (fn as any)(...args);
+					if (mayUseDemo) dataSource.set('live');
+					return value;
 				} catch (e) {
-					if (isNetworkError(e)) {
-						console.warn(`[gurusocial] Convex unreachable for ${String(section)}.${method} — using demo data`);
-						return (local[section] as any)[method](...args);
+					if (!isNetworkError(e)) throw e;
+					if (!mayUseDemo) {
+						throw new Error(
+							'We could not reach the server, so this change was not saved. Try again when your connection returns.'
+						);
 					}
-					throw e;
+					console.warn(`[gurusocial] Convex unreachable for ${key} — showing demo data`);
+					// A Convex session token has no local session; create one so the
+					// demo workspace can answer this read, then seed it once.
+					try {
+						await ensureDemoSession(String(args[0] ?? ''));
+					} catch {
+						/* seeding is best effort */
+					}
+					dataSource.set('demo');
+					return (local[section] as any)[method](...args);
 				}
 			};
 		}
@@ -130,14 +164,20 @@ export function persistToken(token: string | null) {
 export function friendlyError(e: unknown): string {
 	const raw = String((e as any)?.message ?? e ?? '').replace(/^Error:\s*/, '').trim();
 	if (!raw) return 'Something went wrong. Please try again.';
-	if (/failed to fetch|networkerror|network error|load failed|timeout/i.test(raw)) {
-		return 'We could not reach the server. Check your connection and try again — the app will use local data meanwhile.';
+	if (/failed to fetch|networkerror|network error|load failed|timed out|timeout/i.test(raw)) {
+		return 'We could not reach the server. Check your connection and try again.';
 	}
 	if (/ArgumentValidationError|validator/i.test(raw)) {
 		return 'That request was not valid. Check the fields and try again.';
 	}
+	if (/Request ID/i.test(raw) && /Server Error/i.test(raw)) {
+		return `The server rejected that request. Retry — if it persists, quote this reference: ${raw.replace(/\s+/g, ' ').trim()}`;
+	}
 	if (/CouldNotFindFunction|not found/i.test(raw)) {
-		return 'This feature is not available on the current backend build. Please retry after the deployment finishes.';
+		return 'This feature is not available on the current backend build. Retry once the deployment finishes.';
+	}
+	if (/not configured/i.test(raw)) {
+		return raw;
 	}
 	return raw.length > 300 ? raw.slice(0, 300) + '…' : raw;
 }
@@ -166,24 +206,28 @@ export async function restoreSession(): Promise<boolean> {
 	}
 }
 
+/**
+ * Sign in atomically: the backend returns the profile with the token, so a
+ * successful sign-in can never be reported as a failure by a follow-up request.
+ */
 export async function signIn(email: string, password: string) {
-	const { token } = await data.auth.signIn(email, password);
-	persistToken(token);
-	const user = await data.auth.me(token);
-	session.set({ token, user, ready: true });
+	const res = await data.auth.signIn(email, password);
+	persistToken(res.token);
+	const user = res.user ?? (await data.auth.me(res.token));
+	session.set({ token: res.token, user, ready: true });
 	return user;
 }
 
 export async function signUp(email: string, name: string, password: string) {
-	const { token } = await data.auth.signUp(email, name, password);
-	persistToken(token);
+	const res = await data.auth.signUp(email, name, password);
+	persistToken(res.token);
 	try {
-		await data.auth.seedWorkspace(token);
+		await data.auth.seedWorkspace(res.token);
 	} catch {
-		/* demo provider seeds synchronously at signup */
+		/* the demo provider seeds synchronously at signup; a live backend seeds lazily */
 	}
-	const user = await data.auth.me(token);
-	session.set({ token, user, ready: true });
+	const user = res.user ?? (await data.auth.me(res.token));
+	session.set({ token: res.token, user, ready: true });
 	return user;
 }
 
@@ -196,7 +240,7 @@ export async function refreshUser() {
 	return user;
 }
 
-/** Complete an OAuth sign-in (Google/GitHub) with the token from the callback. */
+/** Complete an OAuth or E-WIN hub sign-in with the token from the callback. */
 export async function completeOAuth(token: string) {
 	persistToken(token);
 	const user = await data.auth.me(token);

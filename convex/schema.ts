@@ -28,10 +28,13 @@ export default defineSchema({
 				bestTimeSuggestions: s.optional(s.boolean()),
 				weeklyReportEmail: s.optional(s.boolean()),
 				llmProvider: s.optional(s.string()),
-				llmApiKey: s.optional(s.string()) // stored for optional model-backed generation; never returned to clients
+					llmApiKey: s.optional(s.string()) // stored for optional model-backed generation; never returned to clients
 			})
-		)
-	}).index('by_email', ['email']),
+		),
+		// E-WIN hub identity for hub-provisioned accounts (single sign-on across the ecosystem).
+		ewinHubUserId: s.optional(s.string()),
+		ewinSyncedAt: s.optional(s.number())
+	}).index('by_email', ['email']).index('by_ewin_hub', ['ewinHubUserId']),
 
 	sessions: defineTable({
 		userId: s.id('users'),
@@ -333,7 +336,10 @@ export default defineSchema({
 		lastReportAt: s.optional(s.number()),
 		linkedAt: s.number(),
 		revokedAt: s.optional(s.number())
-	}).index('by_source_hub', ['sourceUserId', 'hubUserId']).index('by_hub', ['hubUserId']),
+	})
+		.index('by_source_hub', ['sourceUserId', 'hubUserId'])
+		.index('by_hub', ['hubUserId'])
+		.index('by_source', ['sourceUserId']),
 
 	// Private support/workspace conversations. Participants (users) may read and
 	// reply; staff access is a separate, permission-scoped admin path.

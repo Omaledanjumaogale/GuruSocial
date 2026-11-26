@@ -10,6 +10,7 @@
 	let password = $state('');
 	let confirm = $state('');
 	let busy = $state(false);
+	let slow = $state(false);
 	let error = $state('');
 	let notice = $state('');
 	let fieldErrors = $state<Record<string, string>>({});
@@ -79,6 +80,9 @@
 		notice = '';
 		if (!validate()) return;
 		busy = true;
+		slow = false;
+		// Honest feedback on a slow network instead of a frozen button.
+		const slowTimer = setTimeout(() => (slow = true), 6000);
 		try {
 			if (mode === 'signup') {
 				await signUp(email, name, password);
@@ -94,6 +98,8 @@
 				notice = 'That email is registered — switch to sign in instead.';
 			}
 		} finally {
+			clearTimeout(slowTimer);
+			slow = false;
 			busy = false;
 		}
 	}
@@ -113,7 +119,9 @@
 			<span class="text-lg font-black tracking-tight text-white">GuruSocial</span>
 		</a>
 		<div>
-			<h2 class="max-w-md text-3xl font-black leading-tight text-white">Your entire social operation, harmonized.</h2>
+			<h2 class="max-w-md font-display text-display-sm font-semibold leading-[1.12] tracking-tight text-white">
+				Your entire social operation, harmonized.
+			</h2>
 			<p class="mt-4 max-w-md text-sm leading-relaxed text-slate-400">
 				Publishing, scheduling, a unified inbox, analytics, CRM, agent automations, an MCP server and a developer
 				API — across 15 platforms. New workspaces start with a full demo dataset that real data replaces as you work.
@@ -137,8 +145,8 @@
 				<span class="text-lg font-black tracking-tight text-white">GuruSocial</span>
 			</div>
 
-			<h1 class="text-2xl font-bold text-white">{title}</h1>
-			<p class="mt-1 text-sm text-slate-400">
+			<h1 class="font-display text-[2rem] font-semibold leading-tight tracking-tight text-white">{title}</h1>
+			<p class="mt-1.5 text-sm text-slate-400">
 				{mode === 'signin' ? 'Sign in to your command center.' : 'Free to start. No credit card required.'}
 			</p>
 
@@ -160,6 +168,13 @@
 						<span class="h-px flex-1 bg-ink-700"></span> or email <span class="h-px flex-1 bg-ink-700"></span>
 					</div>
 				</div>
+			{/if}
+
+			{#if backendMode === 'convex'}
+				<p class="mt-4 rounded-lg border border-ink-700 bg-ink-900 px-3 py-2 text-2xs leading-relaxed text-slate-500">
+					Already part of the E-WIN ecosystem? Use <span class="font-semibold text-slate-300">Continue with E-WIN</span> in your
+					hub account — the hub signs you in here with a one-time session, so there is no second password to remember.
+				</p>
 			{/if}
 
 			<form class="mt-4 space-y-4" onsubmit={submit} novalidate>
@@ -233,9 +248,14 @@
 					{/if}
 				</div>
 
-				<button class="btn btn-primary w-full py-3" disabled={busy}>
+				<button class="btn btn-primary w-full py-3" disabled={busy} aria-busy={busy}>
 					{busy ? 'Working…' : mode === 'signin' ? 'Sign in' : 'Create workspace & start'}
 				</button>
+				{#if slow}
+					<p class="text-center text-2xs text-slate-500" aria-live="polite">
+						Still connecting — a slow connection can take a few seconds. Nothing is lost; retry if it stalls.
+					</p>
+				{/if}
 			</form>
 
 			<p class="mt-6 text-center text-sm text-slate-400">

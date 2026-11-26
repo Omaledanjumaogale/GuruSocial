@@ -6,6 +6,7 @@
 	import PlatformBadge from '$lib/components/PlatformBadge.svelte';
 	import { toast } from '$lib/stores/toast';
 	import { onMount } from 'svelte';
+	import PageHeader from '$lib/components/PageHeader.svelte';
 
 	let overview = $state<any>(null);
 	let audience = $state<any[]>([]);
@@ -55,20 +56,18 @@
 </script>
 
 <div>
-	<div class="mb-6 flex flex-wrap items-end justify-between gap-3">
-		<div>
-			<h1 class="text-2xl font-black tracking-tight text-white">Analytics</h1>
-			<p class="mt-1 text-sm text-slate-400">Unified, per-platform performance with competitor benchmarks — every metric optional per network, like the best APIs report them.</p>
-		</div>
-		<div class="flex gap-2">
-			<select class="input w-auto" bind:value={days} onchange={() => ((loading = true), load())}>
-				<option value={7}>Last 7 days</option>
-				<option value={30}>Last 30 days</option>
-				<option value={90}>Last 90 days</option>
-			</select>
-			<button class="btn btn-ghost" onclick={exportCsv}>↓ Export CSV</button>
-		</div>
-	</div>
+	<PageHeader
+		eyebrow="Intelligence"
+		title="Analytics"
+		description="Unified, per-platform performance with competitor benchmarks — every metric optional per network, the way the underlying APIs report them."
+	>
+		<select class="input w-auto py-2 text-xs" bind:value={days} onchange={() => ((loading = true), load())}>
+			<option value={7}>Last 7 days</option>
+			<option value={30}>Last 30 days</option>
+			<option value={90}>Last 90 days</option>
+		</select>
+		<button class="btn btn-ghost btn-sm" onclick={exportCsv}>↓ Export CSV</button>
+	</PageHeader>
 
 	{#if loading}
 		<div class="grid animate-pulse gap-4 sm:grid-cols-2 lg:grid-cols-4">{#each Array(4) as _}<div class="card h-24"></div>{/each}</div>

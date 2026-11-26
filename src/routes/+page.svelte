@@ -39,8 +39,9 @@
 				<span class="text-lg font-black tracking-tight text-white">GuruSocial</span>
 			</div>
 			<div class="flex items-center gap-2">
-				<a href="/docs" class="btn btn-ghost hidden sm:inline-flex">API & MCP docs</a>
-				<a href="/auth" class="btn btn-ghost">{hasSession ? 'Open dashboard' : 'Sign in'}</a>
+				<a href="/pricing" class="btn btn-ghost btn-sm hidden sm:inline-flex">Pricing</a>
+				<a href="/docs" class="btn btn-ghost btn-sm hidden sm:inline-flex">API & MCP docs</a>
+				<a href="/auth" class="btn btn-ghost btn-sm">{hasSession ? 'Open dashboard' : 'Sign in'}</a>
 				<a href="/dashboard" class="btn btn-primary">{hasSession ? 'Dashboard' : 'Start free'}</a>
 			</div>
 		</div>
@@ -56,7 +57,7 @@
 		<div class="pointer-events-none absolute -top-24 left-1/2 h-72 w-[42rem] -translate-x-1/2 rounded-full bg-guru-600/20 blur-3xl"></div>
 		<div class="relative">
 			<span class="chip bg-guru-600/15 text-guru-400 ring-1 ring-guru-500/30">Enterprise-grade · installable PWA · 15 platforms</span>
-			<h1 class="mt-5 max-w-3xl text-4xl font-black leading-[1.08] tracking-tight text-white sm:text-6xl">
+			<h1 class="mt-5 max-w-3xl font-display text-display-lg font-semibold leading-[1.04] tracking-[-0.03em] text-white">
 				One command center for your entire<br class="hidden sm:block" />
 				<span class="bg-gradient-to-r from-guru-400 via-guru-500 to-mint-400 bg-clip-text text-transparent"> social operation.</span>
 			</h1>
@@ -80,8 +81,8 @@
 
 	<!-- Pillars -->
 	<section class="mx-auto max-w-6xl px-4 pb-16">
-		<h2 class="text-2xl font-bold text-white">Everything the best tools have. One place.</h2>
-		<p class="mt-2 text-slate-400">We audited eleven platforms and two API engines so you don't have to tab-juggle again.</p>
+		<h2 class="font-display text-display-sm font-semibold tracking-tight text-white">Everything the best tools have. One place.</h2>
+		<p class="mt-3 max-w-2xl text-sm leading-relaxed text-slate-400">We audited eleven platforms and two API engines so you don't have to tab-juggle again.</p>
 		<div class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
 			{#each PILLARS as pillar}
 				<div class="card p-5">
@@ -164,8 +165,9 @@
 	</section>
 
 	<footer class="border-t border-ink-700/60 py-8 text-center text-xs text-slate-600">
-		<p>GuruSocial v1.1.0 — built with SvelteKit, Convex, Tailwind CSS and reverse-api-engineer. © 2026</p>
+		<p>GuruSocial v1.2.0 — built with SvelteKit, Convex, Tailwind CSS and reverse-api-engineer. © 2026</p>
 		<p class="mt-2 flex justify-center gap-4">
+			<a href="/pricing" class="hover:text-slate-400">Pricing</a>
 			<a href="/docs" class="hover:text-slate-400">API docs</a>
 			<a href="/console" class="hover:text-slate-400">Admin console</a>
 			<a href="https://beaming-bobcat-890.eu-west-1.convex.site/mcp" class="hover:text-slate-400">MCP endpoint</a>

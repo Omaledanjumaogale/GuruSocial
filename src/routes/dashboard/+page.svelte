@@ -8,6 +8,7 @@
 	import { PLATFORM_SPECS } from '$lib/ai/generator';
 	import { onMount } from 'svelte';
 	import { toast } from '$lib/stores/toast';
+	import PageHeader from '$lib/components/PageHeader.svelte';
 
 	let overview = $state<any>(null);
 	let audience = $state<any[]>([]);
@@ -58,16 +59,16 @@
 </script>
 
 <div>
-	<div class="mb-6 flex flex-wrap items-end justify-between gap-3">
-		<div>
-			<h1 class="text-2xl font-black tracking-tight text-white">Command center</h1>
-			<p class="mt-1 text-sm text-slate-400">Good to see you, {$session.user?.name}. Here's the last 30 days across every channel.</p>
-		</div>
-		<div class="flex gap-2">
-			<a href="/dashboard/composer" class="btn btn-primary">✦ New post</a>
-			<a href="/dashboard/inbox" class="btn btn-ghost">✉ Inbox{#if inboxUnread.length > 0}&nbsp;<span class="rounded-full bg-guru-600 px-1.5 text-[10px] text-white">{inboxUnread.length}</span>{/if}</a>
-		</div>
-	</div>
+	<PageHeader
+		eyebrow="Command center"
+		title={`Good to see you, ${$session.user?.name ?? 'there'}`}
+		description="The last 30 days across every connected channel — publishing, engagement and audience in one view."
+	>
+		<a href="/dashboard/composer" class="btn btn-primary btn-sm">✦ New post</a>
+		<a href="/dashboard/inbox" class="btn btn-ghost btn-sm">
+			✉ Inbox{#if inboxUnread.length > 0}<span class="ml-1 rounded-full bg-guru-600 px-1.5 text-[10px] text-white">{inboxUnread.length}</span>{/if}
+		</a>
+	</PageHeader>
 
 	{#if loading}
 		<div class="grid animate-pulse gap-4 sm:grid-cols-2 lg:grid-cols-4">

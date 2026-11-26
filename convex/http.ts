@@ -220,6 +220,15 @@ async function ewinGuard(ctx: any, request: Request, path: string): Promise<{ ok
 
 const ewinNoStore = { 'content-type': 'application/json', 'cache-control': 'no-store', 'access-control-allow-origin': '*' };
 
+/** Canonical public origin for browser redirects issued by http actions. */
+function publicAppOrigin(): string {
+	try {
+		return (process.env.PUBLIC_APP_URL ?? 'https://gurusocial.ewinproject.org').replace(/\/$/, '');
+	} catch {
+		return 'https://gurusocial.ewinproject.org';
+	}
+}
+
 const ewinLink = httpActionGeneric(async (ctx, request) => handleError(async () => {
 	const guard = await ewinGuard(ctx, request, '/integrations/ewin/link');
 	if (!guard.ok) return json({ error: 'Unauthorized or malformed request.' }, 401);
@@ -251,6 +260,61 @@ const ewinRevoke = httpActionGeneric(async (ctx, request) => handleError(async (
 	return new Response(JSON.stringify(result ?? { revoked: true }), { status: 200, headers: ewinNoStore });
 }));
 
+/* ------------------------ E-WIN identity synchronisation ------------------------ */
+
+/**
+ * Hub-issued session: the hub has already authenticated the person, so this
+ * returns a GuruSocial session token the browser can redeem at /auth?token=…
+ * The token is only ever returned over the signed service channel.
+ */
+const ewinSession = httpActionGeneric(async (ctx, request) => handleError(async () => {
+	const guard = await ewinGuard(ctx, request, '/integrations/ewin/session');
+	if (!guard.ok) return json({ error: 'Unauthorized or malformed request.' }, 401);
+	const hubUserId = String(guard.body?.hubUserId ?? '').trim();
+	const hubEmail = String(guard.body?.hubEmail ?? '').trim().toLowerCase();
+	if (!hubUserId || !hubEmail) return json({ error: 'hubUserId and hubEmail are required.' }, 422);
+	const result = await ctx.runMutation(api.ewinAuth.provisionFromHub, {
+		hubUserId,
+		hubEmail,
+		name: guard.body?.name ? String(guard.body.name) : undefined,
+		role: guard.body?.role ? String(guard.body.role) : undefined
+	});
+	return new Response(
+		JSON.stringify({
+			...result,
+			appUrl: `${publicAppOrigin()}/auth`,
+			redeemUrl: `${publicAppOrigin()}/auth?token=${result.token}&provider=ewin`
+		}),
+		{ status: 200, headers: ewinNoStore }
+	);
+}));
+
+const ewinIdentity = httpActionGeneric(async (ctx, request) => handleError(async () => {
+	const guard = await ewinGuard(ctx, request, '/integrations/ewin/identity');
+	if (!guard.ok) return json({ error: 'Unauthorized or malformed request.' }, 401);
+	const hubUserId = String(guard.body?.hubUserId ?? '').trim();
+	if (!hubUserId) return json({ error: 'hubUserId is required.' }, 422);
+	const identity = await ctx.runQuery(api.ewinAuth.identityForHub, { hubUserId });
+	if (!identity) return json({ linked: false, hubUserId }, 404);
+	return new Response(JSON.stringify({ linked: true, ...identity }), { status: 200, headers: ewinNoStore });
+}));
+
+const ewinHealth = httpActionGeneric(async () =>
+	json({
+		service: 'gurusocial',
+		version: '1.2.0',
+		identity: 'hub-asserted sessions enabled',
+		endpoints: [
+			'/integrations/ewin/link',
+			'/integrations/ewin/session',
+			'/integrations/ewin/identity',
+			'/integrations/ewin/report',
+			'/integrations/ewin/revoke'
+		],
+		generatedAt: new Date().toISOString()
+	})
+);
+
 const httpApi = httpRouter();
 httpApi.route({ path: '/api/v1/posts', method: 'POST', handler: createPost });
 httpApi.route({ path: '/api/v1/posts', method: 'GET', handler: listPosts });
@@ -262,6 +326,9 @@ httpApi.route({ path: '/oauth/google/callback', method: 'GET', handler: googleCa
 httpApi.route({ path: '/integrations/ewin/link', method: 'POST', handler: ewinLink });
 httpApi.route({ path: '/integrations/ewin/report', method: 'POST', handler: ewinReport });
 httpApi.route({ path: '/integrations/ewin/revoke', method: 'POST', handler: ewinRevoke });
+httpApi.route({ path: '/integrations/ewin/session', method: 'POST', handler: ewinSession });
+httpApi.route({ path: '/integrations/ewin/identity', method: 'POST', handler: ewinIdentity });
+httpApi.route({ path: '/integrations/ewin/health', method: 'GET', handler: ewinHealth });
 httpApi.route({ path: '/oauth/github/callback', method: 'GET', handler: githubCallback });
 httpApi.route({ pathPrefix: '/', method: 'OPTIONS', handler: corsPreflight });
 

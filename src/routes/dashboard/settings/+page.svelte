@@ -95,8 +95,8 @@
 
 <div class="grid gap-4 lg:grid-cols-2">
 	<div>
-		<h1 class="text-2xl font-black tracking-tight text-white">Settings</h1>
-		<p class="mt-1 mb-4 text-sm text-slate-400">Workspace identity, AI provider and security — in plain language.</p>
+		<h1 class="page-title">Settings</h1>
+		<p class="page-sub mb-4">Workspace identity, AI provider and security — in plain language.</p>
 
 		<div class="card mb-4 p-5">
 			<h3 class="mb-4 text-sm font-bold text-white">Profile & brand voice</h3>

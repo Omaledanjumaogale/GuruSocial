@@ -9,6 +9,31 @@ import type { DataProvider } from '../types';
 
 const api = anyApi;
 
+/**
+ * Every backend call is bounded. Without a deadline a stalled request leaves the
+ * sign-in button reading "Working…" forever — the reported "not responsive"
+ * symptom — because the promise never settles.
+ */
+const CALL_TIMEOUT_MS = 20_000;
+
+function withTimeout<T>(promise: Promise<T>, action: string): Promise<T> {
+	let timer: ReturnType<typeof setTimeout> | undefined;
+	const deadline = new Promise<never>((_, reject) => {
+		timer = setTimeout(
+			() =>
+				reject(
+					new Error(
+						`The server timed out while trying to ${action}. Check your connection and try again.`
+					)
+				),
+			CALL_TIMEOUT_MS
+		);
+	});
+	return Promise.race([promise, deadline]).finally(() => {
+		if (timer) clearTimeout(timer);
+	}) as Promise<T>;
+}
+
 export function createConvexProvider(url: string): DataProvider {
 	const client = new ConvexHttpClient(url);
 
@@ -16,16 +41,50 @@ export function createConvexProvider(url: string): DataProvider {
 		try {
 			return await fn();
 		} catch (e: any) {
-			throw new Error(String(e?.message ?? e).replace(/^Error: /, ''));
+			throw new Error(String(e?.message ?? e).replace(/^Error: /, '').trim());
+		}
+	};
+
+	const call = <T>(fn: () => Promise<T>, action: string): Promise<T> =>
+		wrap(() => withTimeout(fn(), action));
+
+	/**
+	 * Function-shape tolerance for staggered deploys: a new frontend can be live
+	 * for a few minutes before the backend deployment lands, and Convex does not
+	 * always say *why* a call failed (a missing function can surface as an opaque
+	 * "Server Error" with only a request id). So the alternate call shape is
+	 * attempted whenever the first fails; if both fail, the original error is the
+	 * one the user sees.
+	 */
+	const callOr = async <T>(
+		primary: () => Promise<T>,
+		fallback: () => Promise<T>,
+		action: string
+	): Promise<T> => {
+		try {
+			return await call(primary, action);
+		} catch (original) {
+			try {
+				return await fallback();
+			} catch {
+				throw original;
+			}
 		}
 	};
 
 	return {
 		auth: {
-			signUp: (email, name, password) => wrap(() => client.mutation(api.auth.signUp, { email, name, password })),
-			signIn: (email, password) => wrap(() => client.mutation(api.auth.signIn, { email, password })),
-			signOut: (token) => wrap(() => client.mutation(api.auth.signOut, { token })),
-			me: (token) => wrap(() => client.mutation(api.auth.me, { token })),
+			signUp: (email, name, password) =>
+				call(() => client.mutation(api.auth.signUp, { email, name, password }), 'create your workspace'),
+			signIn: (email, password) =>
+				call(() => client.mutation(api.auth.signIn, { email, password }), 'sign you in'),
+			signOut: (token) => call(() => client.mutation(api.auth.signOut, { token }), 'sign you out'),
+			me: (token) =>
+				callOr(
+					() => client.query(api.auth.me, { token }),
+					() => client.mutation(api.auth.me, { token }),
+					'restore your session'
+				),
 			updateProfile: (token, patch) => wrap(() => client.mutation(api.auth.updateProfile, { token, ...patch })),
 			changePassword: (token, current, next) => wrap(() => client.mutation(api.auth.changePassword, { token, current, next })),
 			seedWorkspace: (token) => wrap(() => client.mutation(api.seed.seedWorkspace, { token }))
@@ -115,7 +174,23 @@ export function createConvexProvider(url: string): DataProvider {
 			auditTrail: (token, limit) => wrap(() => client.query(api.keys.auditTrail, { token, limit }))
 		},
 		ewin: {
-			issueCode: (token) => wrap(() => client.mutation(api.ewin.issueCode, { token }))
+			issueCode: (token) => call(() => client.mutation(api.ewin.issueCode, { token }), 'generate a hub code'),
+			status: (token) =>
+				callOr(
+					() => client.query(api.ewin.status, { token }),
+					// Only used when the deployed backend predates this query.
+					async () => ({
+						linked: false,
+						hubUserId: null,
+						hubEmail: null,
+						linkedAt: null,
+						lastReportAt: null,
+						syncedAt: null,
+						history: []
+					}),
+					'read the hub connection'
+				),
+			disconnect: (token) => call(() => client.mutation(api.ewin.disconnect, { token }), 'disconnect the hub')
 		},
 		ai: {
 			generate: (token, req) => wrap(() => client.action(api.ai.generate, { token, topic: req.topic, sourceText: req.sourceText ?? undefined, platforms: req.platforms }))

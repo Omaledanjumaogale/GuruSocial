@@ -238,10 +238,26 @@ export interface NotificationPrefs {
 	security: boolean;
 }
 
+export interface EwinStatus {
+	linked: boolean;
+	hubUserId: string | null;
+	hubEmail: string | null;
+	linkedAt: number | null;
+	lastReportAt: number | null;
+	syncedAt: number | null;
+	history: Array<{
+		status: string;
+		hubUserId: string;
+		hubEmail: string;
+		linkedAt: number;
+		lastReportAt: number | null;
+	}>;
+}
+
 export interface DataProvider {
 	auth: {
-		signUp(email: string, name: string, password: string): Promise<{ token: string; userId: string }>;
-		signIn(email: string, password: string): Promise<{ token: string; userId: string }>;
+		signUp(email: string, name: string, password: string): Promise<{ token: string; userId: string; user?: User }>;
+		signIn(email: string, password: string): Promise<{ token: string; userId: string; user?: User }>;
 		signOut(token: string): Promise<void>;
 		me(token: string): Promise<User>;
 		updateProfile(token: string, patch: Partial<{ name: string; brandVoice: string; bestTimeSuggestions: boolean; weeklyReportEmail: boolean }>): Promise<void>;
@@ -310,6 +326,8 @@ export interface DataProvider {
 	};
 	ewin: {
 		issueCode(token: string): Promise<{ code: string; expiresAt: number }>;
+		status(token: string): Promise<EwinStatus>;
+		disconnect(token: string): Promise<number>;
 	};
 	ai: {
 		generate(token: string, req: { topic: string; sourceText?: string; platforms: string[] }): Promise<Array<{ platform: string; content: string; hashtags: string[]; warnings: string[]; charCount: number; charLimit: number }>>;

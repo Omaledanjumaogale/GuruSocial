@@ -2,7 +2,7 @@ import type { Permission } from '$lib/auth/rbac';
 
 /**
  * Single source of truth for workspace navigation. Desktop sidebar, mobile
- * drawer and any future tab bar all read from here so destinations, labels and
+ * drawer and the bottom bar all read from here so destinations, labels and
  * permission requirements cannot drift apart.
  *
  * `permission` controls presentation only — the server enforces the same
@@ -32,13 +32,15 @@ export const NAVIGATION: NavSection[] = [
 			{ id: 'calendar', label: 'Calendar & queue', href: '/dashboard/calendar', icon: '▦', permission: 'posts.create' },
 			{ id: 'posts', label: 'Posts & approvals', href: '/dashboard/posts', icon: '▤', permission: 'workspace.read' },
 			{ id: 'inbox', label: 'Unified inbox', href: '/dashboard/inbox', icon: '✉', permission: 'inbox.read' },
-			{ id: 'messages', label: 'Messages', href: '/dashboard/messages', icon: '✉', permission: 'messages.read.participant', badge: 'messages' }
+			{ id: 'messages', label: 'Messages', href: '/dashboard/messages', icon: '✉', permission: 'messages.read.participant', badge: 'messages', mobilePriority: 3 },
+			{ id: 'notifications', label: 'Notifications', href: '/dashboard/notifications', icon: '◔', permission: 'profile.read.self', badge: 'notifications' }
 		]
 	},
 	{
 		group: 'Intelligence',
 		items: [
-			{ id: 'analytics', label: 'Analytics', href: '/dashboard/analytics', icon: '◔', permission: 'analytics.read' },
+			{ id: 'analytics', label: 'Analytics', href: '/dashboard/analytics', icon: '◔', permission: 'analytics.read', mobilePriority: 4 },
+			{ id: 'reports', label: 'Reports', href: '/dashboard/reports', icon: '▥', permission: 'analytics.read' },
 			{ id: 'agents', label: 'AI agents & automations', href: '/dashboard/agents', icon: '⚙', permission: 'workspace.read' },
 			{ id: 'studio', label: 'Visual studio', href: '/dashboard/studio', icon: '▣', permission: 'workspace.read' }
 		]
@@ -54,6 +56,7 @@ export const NAVIGATION: NavSection[] = [
 	{
 		group: 'Enterprise',
 		items: [
+			{ id: 'ecosystem', label: 'E-WIN ecosystem', href: '/dashboard/ecosystem', icon: '⟡', permission: 'workspace.read' },
 			{ id: 'integrations', label: 'Reverse Studio', href: '/dashboard/integrations', icon: '⟐', permission: 'workspace.read' },
 			{ id: 'developer', label: 'Developer & API', href: '/dashboard/developer', icon: '⌨', permission: 'developer.keys' },
 			{ id: 'team', label: 'Team & audit', href: '/dashboard/team', icon: '⚇', permission: 'team.read' },

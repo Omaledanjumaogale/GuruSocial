@@ -1,5 +1,10 @@
 import { v } from 'convex/values';
-import { mutationGeneric as mutation, internalQueryGeneric as internalQuery, internalMutationGeneric as internalMutation } from 'convex/server';
+import {
+	mutationGeneric as mutation,
+	queryGeneric as query,
+	internalQueryGeneric as internalQuery,
+	internalMutationGeneric as internalMutation
+} from 'convex/server';
 import { requireUser } from './lib';
 
 /**
@@ -23,6 +28,85 @@ export const issueCode = mutation({
 			userId: user._id, actor: user.name, action: 'ewin.code_issued', target: 'hub', detail: '', createdAt: Date.now()
 		});
 		return { code, expiresAt: Date.now() + 10 * 60e3 };
+	}
+});
+
+/**
+ * Hub connection state for the signed-in workspace, used by Settings and the
+ * Ecosystem page. Read-only and safe to poll: it exposes identifiers the user
+ * already owns, never the shared secret or report bodies.
+ */
+export const status = query({
+	args: { token: v.string() },
+	returns: v.object({
+		linked: v.boolean(),
+		hubUserId: v.union(v.string(), v.null()),
+		hubEmail: v.union(v.string(), v.null()),
+		linkedAt: v.union(v.number(), v.null()),
+		lastReportAt: v.union(v.number(), v.null()),
+		syncedAt: v.union(v.number(), v.null()),
+		history: v.array(
+			v.object({
+				status: v.string(),
+				hubUserId: v.string(),
+				hubEmail: v.string(),
+				linkedAt: v.number(),
+				lastReportAt: v.union(v.number(), v.null())
+			})
+		)
+	}),
+	handler: async (ctx, { token }) => {
+		const user = await requireUser(ctx, token);
+		const rows = await ctx.db
+			.query('ewinLinks')
+			.withIndex('by_source', (q) => q.eq('sourceUserId', user._id))
+			.collect();
+		const sorted = rows.sort((a, b) => b.linkedAt - a.linkedAt);
+		const active = sorted.find((l) => l.status === 'active') ?? null;
+		return {
+			linked: !!active,
+			hubUserId: active?.hubUserId ?? null,
+			hubEmail: active?.hubEmail ?? null,
+			linkedAt: active?.linkedAt ?? null,
+			lastReportAt: active?.lastReportAt ?? null,
+			syncedAt: user.ewinSyncedAt ?? null,
+			history: sorted.map((l) => ({
+				status: l.status,
+				hubUserId: l.hubUserId,
+				hubEmail: l.hubEmail,
+				linkedAt: l.linkedAt,
+				lastReportAt: l.lastReportAt ?? null
+			}))
+		};
+	}
+});
+
+/** Owner-initiated disconnect: revokes every hub link for this workspace. */
+export const disconnect = mutation({
+	args: { token: v.string() },
+	returns: v.number(),
+	handler: async (ctx, { token }) => {
+		const user = await requireUser(ctx, token);
+		const rows = await ctx.db
+			.query('ewinLinks')
+			.withIndex('by_source', (q) => q.eq('sourceUserId', user._id))
+			.collect();
+		let revoked = 0;
+		for (const row of rows) {
+			if (row.status === 'active') {
+				await ctx.db.patch(row._id, { status: 'revoked', revokedAt: Date.now() });
+				revoked++;
+			}
+		}
+		await ctx.db.insert('auditLog', {
+			userId: user._id,
+			actor: user.name,
+			action: 'ewin.disconnected',
+			target: 'hub',
+			detail: `${revoked} link(s) revoked`,
+			createdAt: Date.now()
+		});
+		return revoked;
 	}
 });
 

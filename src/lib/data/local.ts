@@ -68,6 +68,43 @@ function save(db: LocalDb) {
 	storage.setItem(DB_KEY, JSON.stringify(db));
 }
 
+/**
+ * Give an arbitrary session token a demo workspace.
+ *
+ * Used only when the live backend is unreachable and a display-only read falls
+ * back to bundled demo data: the Convex token has no local session, so without
+ * this the fallback would throw "Unauthorized" instead of rendering.
+ */
+export async function ensureDemoSession(token: string) {
+	if (!token) return;
+	const db = load();
+	if (db.sessions.some((s) => s.token === token)) return;
+	const user: Row = {
+		_id: uid(),
+		email: 'demo@gurusocial.workspace',
+		name: 'Demo workspace',
+		passwordHash: 'demo',
+		role: 'owner',
+		plan: 'free',
+		createdAt: Date.now(),
+		brandVoice: ''
+	};
+	db.users.push(user);
+	db.sessions.push({
+		_id: uid(),
+		userId: user._id,
+		token,
+		expiresAt: Date.now() + 864e5,
+		createdAt: Date.now()
+	});
+	save(db);
+	try {
+		await localProvider.auth.seedWorkspace(token);
+	} catch {
+		/* seeding is best effort */
+	}
+}
+
 /** Workspace members that can be messaged in demo mode. */
 function directoryFor(db: LocalDb, userId: string) {
 	return db.users
@@ -603,6 +640,20 @@ export const localProvider: DataProvider = {
 	ewin: {
 		async issueCode() {
 			throw new Error('The E-WIN hub connection requires the live Convex backend.');
+		},
+		async status() {
+			return {
+				linked: false,
+				hubUserId: null,
+				hubEmail: null,
+				linkedAt: null,
+				lastReportAt: null,
+				syncedAt: null,
+				history: []
+			};
+		},
+		async disconnect() {
+			return 0;
 		}
 	},
 	ai: {

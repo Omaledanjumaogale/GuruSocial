@@ -47,11 +47,6 @@
 		</div>
 	</nav>
 
-	<!-- Promotional slider -->
-	<section class="mx-auto max-w-6xl px-4 pt-8 sm:pt-10">
-		<ImageSlider />
-	</section>
-
 	<!-- Hero -->
 	<section class="relative mx-auto max-w-6xl px-4 pb-16 pt-16 sm:pt-24">
 		<div class="pointer-events-none absolute -top-24 left-1/2 h-72 w-[42rem] -translate-x-1/2 rounded-full bg-guru-600/20 blur-3xl"></div>
@@ -77,6 +72,11 @@
 				{/each}
 			</div>
 		</div>
+	</section>
+
+	<!-- Promotional slider (proof of work, beneath the hero) -->
+	<section class="mx-auto max-w-6xl px-4 pt-2 sm:pt-4">
+		<ImageSlider />
 	</section>
 
 	<!-- Pillars -->

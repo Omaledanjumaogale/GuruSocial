@@ -49,6 +49,19 @@ export function createConvexProvider(url: string): DataProvider {
 		wrap(() => withTimeout(fn(), action));
 
 	/**
+	 * Auth outcomes arrive as values rather than exceptions because production
+	 * Convex redacts thrown messages. Without this, "wrong password" and "email
+	 * already exists" reached the user as an opaque request-id server error.
+	 */
+	type AuthResult =
+		| { ok: true; token: string; userId: string; user: unknown }
+		| { ok: false; error: string };
+	const unwrapAuth = (res: AuthResult) => {
+		if (!res.ok) throw new Error(res.error);
+		return { token: res.token, userId: res.userId, user: res.user as any };
+	};
+
+	/**
 	 * Function-shape tolerance for staggered deploys: a new frontend can be live
 	 * for a few minutes before the backend deployment lands, and Convex does not
 	 * always say *why* a call failed (a missing function can surface as an opaque
@@ -74,10 +87,20 @@ export function createConvexProvider(url: string): DataProvider {
 
 	return {
 		auth: {
-			signUp: (email, name, password) =>
-				call(() => client.mutation(api.auth.signUp, { email, name, password }), 'create your workspace'),
-			signIn: (email, password) =>
-				call(() => client.mutation(api.auth.signIn, { email, password }), 'sign you in'),
+			signUp: async (email, name, password) => {
+				const res = (await call(
+					() => client.mutation(api.auth.signUp, { email, name, password }),
+					'create your workspace'
+				)) as unknown as AuthResult;
+				return unwrapAuth(res);
+			},
+			signIn: async (email, password) => {
+				const res = (await call(
+					() => client.mutation(api.auth.signIn, { email, password }),
+					'sign you in'
+				)) as unknown as AuthResult;
+				return unwrapAuth(res);
+			},
 			signOut: (token) => call(() => client.mutation(api.auth.signOut, { token }), 'sign you out'),
 			me: (token) =>
 				callOr(

@@ -9,6 +9,7 @@
 
 	const api = anyApi;
 	const TOKEN_KEY = 'gurusocial.admin.token.v1';
+	const EXPIRES_KEY = 'gurusocial.admin.expires.v1';
 	const CONVEX_URL = import.meta.env.VITE_CONVEX_URL as string | undefined;
 
 	type TabId = 'overview' | 'users' | 'roles' | 'messages' | 'broadcast' | 'audit' | 'system';
@@ -49,6 +50,12 @@
 
 	onMount(() => {
 		token = storage.getItem(TOKEN_KEY);
+		const expiresAt = Number(storage.getItem(EXPIRES_KEY) ?? 0);
+		if (token && expiresAt && expiresAt < Date.now()) {
+			endSession();
+			error = 'Your operator session expired. Sign in again.';
+			return;
+		}
 		if (token) void loadAll();
 	});
 
@@ -61,8 +68,15 @@
 			users = await client.query(api.adminOps.listUsers, { adminToken: token });
 			activity = await client.query(api.adminOps.activity, { adminToken: token, limit: 60 });
 		} catch (e: any) {
-			error = e.message;
-			if (/invalid|expired/i.test(e.message)) endSession();
+			const message = String(e?.message ?? e);
+			// Production Convex redacts thrown messages, so an expired session can
+			// arrive as an opaque "Server Error" carrying only a request id.
+			if (/invalid|expired|Server Error|Request ID/i.test(message)) {
+				endSession();
+				error = 'Your operator session expired. Sign in again.';
+			} else {
+				error = message;
+			}
 		} finally {
 			loading = false;
 		}
@@ -77,9 +91,19 @@
 		error = '';
 		busy = true;
 		try {
-			const res = await client.action(api.admin.signIn, { email, password });
+			const res = (await client.action(api.admin.signIn, { email, password })) as {
+				ok?: boolean;
+				token?: string;
+				email?: string;
+				error?: string;
+			};
+			if (!res.ok || !res.token) {
+				error = res.error ?? 'Sign-in failed. Check the email and password, then try again.';
+				return;
+			}
 			token = res.token;
 			storage.setItem(TOKEN_KEY, res.token);
+			storage.setItem(EXPIRES_KEY, String(Date.now() + 12 * 3600e3));
 			password = '';
 			toast('Operator session started.');
 			await loadAll();
@@ -92,6 +116,7 @@
 
 	function endSession() {
 		storage.removeItem(TOKEN_KEY);
+		storage.removeItem(EXPIRES_KEY);
 		token = null;
 		overview = null;
 		users = [];

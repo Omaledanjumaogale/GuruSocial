@@ -12,18 +12,25 @@ const api = anyApi;
  */
 export const signIn = action({
 	args: { email: v.string(), password: v.string() },
-	returns: v.object({ token: v.string(), email: v.string() }),
+	returns: v.object({
+		ok: v.boolean(),
+		token: v.optional(v.string()),
+		email: v.optional(v.string()),
+		error: v.optional(v.string())
+	}),
 	handler: async (ctx, { email, password }) => {
 		const adminEmail = (process.env.SUPER_ADMIN_EMAIL ?? '').trim().toLowerCase();
 		const adminPassword = process.env.SUPER_ADMIN_PASSWORD ?? '';
 		const secret = process.env.ADMIN_SESSION_SECRET ?? 'gurusocial';
-		if (!adminEmail || !adminPassword) throw new Error('Admin console is not configured on this deployment.');
+		if (!adminEmail || !adminPassword) {
+			return { ok: false, error: 'The admin console is not configured on this deployment.' };
+		}
 		if (email.trim().toLowerCase() !== adminEmail || password !== adminPassword) {
-			throw new Error('Invalid admin credentials.');
+			return { ok: false, error: 'Invalid admin credentials. Check the email and password, then try again.' };
 		}
 		const token = sha256(`${adminEmail}:${adminPassword}:${secret}:${Date.now()}:${Math.random()}`);
 		await ctx.runMutation(api.adminInternal.createSession, { email: adminEmail, token });
-		return { token, email: adminEmail };
+		return { ok: true, token, email: adminEmail };
 	}
 });
 

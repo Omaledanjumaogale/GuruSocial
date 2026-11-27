@@ -42,18 +42,26 @@ async function scheduleHubSync(ctx: MutCtx, userId: any, event: 'signup' | 'sign
 	}
 }
 
+/**
+ * Structured auth results. Production Convex deployments redact thrown error
+ * messages, so user-facing validation failures are returned as values that the
+ * client can display verbatim.
+ */
+const authSuccess = v.object({ ok: v.literal(true), token: v.string(), userId: v.string(), user: profile });
+const authFailure = v.object({ ok: v.literal(false), error: v.string() });
+
 export const signUp = mutation({
 	args: { email: v.string(), name: v.string(), password: v.string() },
-	returns: v.object({ token: v.string(), userId: v.string(), user: profile }),
+	returns: v.union(authSuccess, authFailure),
 	handler: async (ctx, { email, name, password }) => {
 		const emailNorm = email.trim().toLowerCase();
-		if (!emailNorm.includes('@')) throw new Error('Enter a valid email address.');
-		if (password.length < 8) throw new Error('Password must be at least 8 characters.');
+		if (!emailNorm.includes('@')) return { ok: false as const, error: 'Enter a valid email address.' };
+		if (password.length < 8) return { ok: false as const, error: 'Password must be at least 8 characters.' };
 		const existing = await ctx.db
 			.query('users')
 			.withIndex('by_email', (q) => q.eq('email', emailNorm))
 			.unique();
-		if (existing) throw new Error('An account with this email already exists. Try signing in.');
+		if (existing) return { ok: false as const, error: 'An account with this email already exists. Try signing in.' };
 		const displayName = name.trim() || emailNorm.split('@')[0];
 		const userId = await ctx.db.insert('users', {
 			email: emailNorm,
@@ -85,6 +93,7 @@ export const signUp = mutation({
 		const token = await createSession(ctx, userId);
 		await scheduleHubSync(ctx, userId, 'signup');
 		return {
+			ok: true as const,
 			token,
 			userId: String(userId),
 			user: { email: emailNorm, name: displayName, plan: 'free', role: 'owner', brandVoice: '' }
@@ -94,22 +103,23 @@ export const signUp = mutation({
 
 export const signIn = mutation({
 	args: { email: v.string(), password: v.string() },
-	returns: v.object({ token: v.string(), userId: v.string(), user: profile }),
+	returns: v.union(authSuccess, authFailure),
 	handler: async (ctx, { email, password }) => {
 		const emailNorm = email.trim().toLowerCase();
 		const user = await ctx.db
 			.query('users')
 			.withIndex('by_email', (q) => q.eq('email', emailNorm))
 			.unique();
-		if (!user) throw new Error('Incorrect email or password.');
+		if (!user) return { ok: false as const, error: 'Incorrect email or password.' };
 		// Hub-asserted and OAuth accounts have no local password.
 		if (user.passwordHash.startsWith('oauth:') || user.passwordHash.startsWith('hub:')) {
-			throw new Error(
-				'This account signs in with Google, GitHub or the E-WIN hub. Use one of those buttons instead.'
-			);
+			return {
+				ok: false as const,
+				error: 'This account signs in with Google, GitHub or the E-WIN hub. Use one of those buttons instead.'
+			};
 		}
 		if (user.passwordHash !== sha256(emailNorm + ':' + password)) {
-			throw new Error('Incorrect email or password.');
+			return { ok: false as const, error: 'Incorrect email or password.' };
 		}
 		const token = await createSession(ctx, user._id);
 		await ctx.db.insert('activityEvents', {
@@ -123,6 +133,7 @@ export const signIn = mutation({
 		});
 		await scheduleHubSync(ctx, user._id, 'signin');
 		return {
+			ok: true as const,
 			token,
 			userId: String(user._id),
 			user: {
